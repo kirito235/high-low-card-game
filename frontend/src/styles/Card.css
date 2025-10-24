@@ -1,0 +1,174 @@
+.card-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px;
+}
+
+.playing-card {
+  width: 140px;
+  height: 200px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  background: white;
+  overflow: hidden;
+}
+
+.playing-card:hover:not(.eliminated) {
+  transform: translateY(-10px) scale(1.05);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+.playing-card.selected {
+  transform: translateY(-10px) scale(1.1);
+  box-shadow: 0 0 30px rgba(52, 152, 219, 0.8);
+  border: 4px solid #3498db;
+}
+
+.playing-card.eliminated {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(100%);
+}
+
+.playing-card.eliminated:hover {
+  transform: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.selected-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 12px;
+  box-shadow: inset 0 0 20px rgba(52, 152, 219, 0.5);
+  pointer-events: none;
+  animation: glow-pulse 1.5s infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: inset 0 0 20px rgba(52, 152, 219, 0.5);
+  }
+  50% {
+    box-shadow: inset 0 0 30px rgba(52, 152, 219, 0.8);
+  }
+}
+
+.deck-label {
+  margin-top: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+.probability-info {
+  margin-top: 12px;
+  width: 140px;
+}
+
+.prob-bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prob-bar {
+  position: relative;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+  backdrop-filter: blur(5px);
+}
+
+.prob-bar.higher {
+  border: 2px solid #2ecc71;
+}
+
+.prob-bar.lower {
+  border: 2px solid #e74c3c;
+}
+
+.prob-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.prob-bar.higher .prob-fill {
+  background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
+}
+
+.prob-bar.lower .prob-fill {
+  background: linear-gradient(90deg, #c0392b 0%, #e74c3c 100%);
+}
+
+.prob-text {
+  position: relative;
+  z-index: 1;
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 0 10px;
+  line-height: 28px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .playing-card {
+    width: 120px;
+    height: 170px;
+  }
+
+  .probability-info {
+    width: 120px;
+  }
+}
+
+@media (max-width: 768px) {
+  .playing-card {
+    width: 90px;
+    height: 130px;
+  }
+
+  .deck-label {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .probability-info {
+    width: 90px;
+  }
+
+  .prob-bar {
+    height: 22px;
+  }
+
+  .prob-text {
+    font-size: 11px;
+    line-height: 22px;
+  }
+}
