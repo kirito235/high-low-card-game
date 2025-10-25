@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import DeckDisplay from './DeckDisplay';
 import gameService from '../services/gameService';
+import Confetti from 'react-confetti';
 import '../styles/GameBoard.css';
 
 const GameBoard = () => {
@@ -14,6 +15,7 @@ const GameBoard = () => {
   const [message, setMessage] = useState('');
   const [lastDrawnCard, setLastDrawnCard] = useState(null);
   const [isFlipping, setIsFlipping] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // Keyboard controls for Higher/Lower
   useEffect(() => {
@@ -106,6 +108,12 @@ const GameBoard = () => {
         setSelectedDeck(null);
         setIsFlipping(false);
 
+        if (newState.gameOver && newState.won) {
+          setShowConfetti(true);
+          // Stop confetti after 5 seconds
+          setTimeout(() => setShowConfetti(false), 5000);
+        }
+
         if (!newState.gameOver) {
           loadProbabilities();
         }
@@ -129,6 +137,7 @@ const GameBoard = () => {
       setProbabilities({});
       setLastDrawnCard(null);
       setIsFlipping(false);
+      setShowConfetti(false);  // ADD THIS
     } catch (error) {
       setMessage('Error resetting game!');
     }
@@ -138,6 +147,16 @@ const GameBoard = () => {
   return (
     <div className="game-board">
       <h1 className="game-title">🎴 High-Low Card Game 🎴</h1>
+
+      {showConfetti && (
+          <Confetti
+              width={window.innerWidth}
+              height={window.innerHeight}
+              recycle={false}
+              numberOfPieces={500}
+              gravity={0.3}
+          />
+      )}
 
       {!isStarted ? (
         <div className="start-screen">
