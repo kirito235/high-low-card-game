@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://high-low-card-game.onrender.com';
+const API_BASE_URL = 'https://high-low-card-game.onrender.com/api/game';
 
 const gameService = {
   // Start a new game
