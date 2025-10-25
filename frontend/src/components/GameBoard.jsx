@@ -84,40 +84,48 @@ const GameBoard = () => {
     }
 
     setLoading(true);
-    setIsFlipping(true);
 
     try {
       const deckNumber = selectedDeck + 1;
       const newState = await gameService.makeGuess(deckNumber, guess);
 
-      // Get the new card that was drawn
-      const newCard = newState.deckValues[selectedDeck];
+      // Extract the drawn card from the backend message
+      // Message format: "Correct! The new card was 6D" or "Wrong! The card was 6D"
+      const cardMatch = newState.message.match(/(?:new card was|card was) ([A-K0-9]+[SHDC])/i);
+      const drawnCard = cardMatch ? cardMatch[1] : null;
 
-      // ALWAYS show the drawn card first (even if deck gets eliminated)
-      // We need to extract the actual drawn card from the message
-      // The backend message contains the card like "The card was 6D"
-      const cardMatch = newState.message.match(/was ([A-K0-9]+[SHDC])/);
-      const drawnCard = cardMatch ? cardMatch[1] : (newCard !== 'XX' ? newCard : null);
+      // Show the drawn card with flip animation
+      if (drawnCard) {
+        setLastDrawnCard(drawnCard);
+        setIsFlipping(true);
 
-      setLastDrawnCard(drawnCard);
+        // Wait for flip animation, then update game state
+        setTimeout(() => {
+          setGameState(newState);
+          setMessage(newState.message);
+          setSelectedDeck(null);
+          setIsFlipping(false);
 
-      // Wait for flip animation to complete, then show result
-      setTimeout(() => {
+          // Trigger confetti if won
+          if (newState.gameOver && newState.won) {
+            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(false), 5000);
+          }
+
+          if (!newState.gameOver) {
+            loadProbabilities();
+          }
+        }, 800);
+      } else {
+        // Fallback if we can't extract the card from message
         setGameState(newState);
         setMessage(newState.message);
         setSelectedDeck(null);
-        setIsFlipping(false);
-
-        if (newState.gameOver && newState.won) {
-          setShowConfetti(true);
-          // Stop confetti after 5 seconds
-          setTimeout(() => setShowConfetti(false), 5000);
-        }
 
         if (!newState.gameOver) {
           loadProbabilities();
         }
-      }, 800); // Increased to 800ms so user can see the card
+      }
 
     } catch (error) {
       setMessage('Error making guess!');
