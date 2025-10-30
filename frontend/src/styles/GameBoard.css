@@ -349,3 +349,27 @@
     font-size: 22px;
   }
 }
+.message-display.loading {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
+  animation: pulse 1.5s infinite;
+}
+
+.loading-spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}

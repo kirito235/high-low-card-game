@@ -17,6 +17,34 @@ const GameBoard = () => {
   const [isFlipping, setIsFlipping] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
+  useEffect(() => {
+    const keepAwake = setInterval(async () => {
+      try {
+        await gameService.healthCheck();
+        console.log('✅ Backend pinged - staying awake');
+      } catch (error) {
+        console.log('❌ Backend ping failed:', error);
+      }
+    }, 10 * 60 * 1000); // 10 minutes in milliseconds
+
+    // Cleanup: stop pinging when component unmounts
+    return () => clearInterval(keepAwake);
+  }, []);
+
+  // Initial ping when component mounts to wake backend immediately
+  useEffect(() => {
+    const wakeBackend = async () => {
+      try {
+        await gameService.healthCheck();
+        console.log('🚀 Backend woke up on page load');
+      } catch (error) {
+        console.log('⏳ Backend is waking up...');
+      }
+    };
+
+    wakeBackend();
+  }, []);
+
   // Keyboard controls for Higher/Lower
   useEffect(() => {
     const handleKeyPress = (event) => {
@@ -49,6 +77,8 @@ const GameBoard = () => {
 
   const startGame = async () => {
     setLoading(true);
+    setMessage('Starting game... (First load may take ~30 seconds if backend was sleeping)');
+
     try {
       const state = await gameService.startGame(numDecks);
       setGameState(state);
@@ -57,7 +87,7 @@ const GameBoard = () => {
       setLastDrawnCard(null);
       await loadProbabilities();
     } catch (error) {
-      setMessage('Error starting game. Make sure backend is running!');
+      setMessage('Error starting game. Please wait 30 seconds and try again.');
     }
     setLoading(false);
   };
@@ -84,43 +114,54 @@ const GameBoard = () => {
     }
 
     setLoading(true);
+    setMessage('Drawing card...');
+
+    // Clear previous drawn card immediately
+    setLastDrawnCard(null);
+    setIsFlipping(false);
 
     try {
       const deckNumber = selectedDeck + 1;
       const newState = await gameService.makeGuess(deckNumber, guess);
 
       // Extract the drawn card from the backend message
-      // Message format: "Correct! The new card was 6D" or "Wrong! The card was 6D"
       const cardMatch = newState.message.match(/(?:new card was|card was) ([A-K0-9]+[SHDC])/i);
       const drawnCard = cardMatch ? cardMatch[1] : null;
 
-      // Show the drawn card with flip animation
       if (drawnCard) {
-        setLastDrawnCard(drawnCard);
-        setIsFlipping(true);
-
-        // Wait for flip animation, then update game state
+        // Small delay to ensure previous card is cleared
         setTimeout(() => {
-          setGameState(newState);
-          setMessage(newState.message);
-          setSelectedDeck(null);
-          setIsFlipping(false);
+          // Set the NEW card and start flip animation
+          setLastDrawnCard(drawnCard);
+          setIsFlipping(true);
 
-          // Trigger confetti if won
-          if (newState.gameOver && newState.won) {
-            setShowConfetti(true);
-            setTimeout(() => setShowConfetti(false), 5000);
-          }
+          // Wait for flip animation to complete
+          setTimeout(() => {
+            setGameState(newState);
+            setMessage(newState.message);
+            setSelectedDeck(null);
+            setIsFlipping(false);
 
-          if (!newState.gameOver) {
-            loadProbabilities();
-          }
-        }, 800);
+            // Trigger confetti if won
+            if (newState.gameOver && newState.won) {
+              setShowConfetti(true);
+              setTimeout(() => setShowConfetti(false), 5000);
+            }
+
+            if (!newState.gameOver) {
+              loadProbabilities();
+            }
+
+            setLoading(false);
+          }, 800);
+        }, 50); // Small delay to clear previous card
+
       } else {
-        // Fallback if we can't extract the card from message
+        // Fallback
         setGameState(newState);
         setMessage(newState.message);
         setSelectedDeck(null);
+        setLoading(false);
 
         if (!newState.gameOver) {
           loadProbabilities();
@@ -130,9 +171,10 @@ const GameBoard = () => {
     } catch (error) {
       setMessage('Error making guess!');
       setIsFlipping(false);
+      setLoading(false);
     }
-    setLoading(false);
   };
+
 
   const resetGame = async () => {
     setLoading(true);
@@ -224,7 +266,8 @@ const GameBoard = () => {
           </div>
 
           {/* Message Display */}
-          <div className={`message-display ${gameState?.gameOver ? 'game-over' : ''}`}>
+          <div className={`message-display ${gameState?.gameOver ? 'game-over' : ''} ${loading ? 'loading' : ''}`}>
+            {loading && <span className="loading-spinner">⏳ </span>}
             {message}
           </div>
 
