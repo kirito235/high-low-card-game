@@ -5,6 +5,10 @@ import gameService from '../services/gameService';
 import Confetti from 'react-confetti';
 import '../styles/GameBoard.css';
 
+// Hint Configuration
+const TOTAL_HINTS = 3; // Customize: Total number of hints
+const ROUNDS_PER_HINT = 3; // Customize: How many rounds one hint lasts
+
 const GameBoard = () => {
   const [gameState, setGameState] = useState(null);
   const [probabilities, setProbabilities] = useState({});
@@ -16,6 +20,9 @@ const GameBoard = () => {
   const [lastDrawnCard, setLastDrawnCard] = useState(null);
   const [isFlipping, setIsFlipping] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [hintsLeft, setHintsLeft] = useState(3); // ADD THIS - Number of hints
+  const [hintsRoundsLeft, setHintsRoundsLeft] = useState(0); // ADD THIS - Rounds hint is active
+  const [showProbabilities, setShowProbabilities] = useState(false); // ADD THIS
 
   useEffect(() => {
     const keepAwake = setInterval(async () => {
@@ -85,13 +92,15 @@ const GameBoard = () => {
       setIsStarted(true);
       setMessage(state.message);
       setLastDrawnCard(null);
+      setHintsLeft(TOTAL_HINTS); // ADD THIS
+      setHintsRoundsLeft(0); // ADD THIS
+      setShowProbabilities(false); // ADD THIS
       await loadProbabilities();
     } catch (error) {
       setMessage('Error starting game. Please wait 30 seconds and try again.');
     }
     setLoading(false);
   };
-
   const loadProbabilities = async () => {
     try {
       const probs = await gameService.getProbabilities();
@@ -131,29 +140,35 @@ const GameBoard = () => {
       if (drawnCard) {
         // Small delay to ensure previous card is cleared
         setTimeout(() => {
-          // Set the NEW card and start flip animation
-          setLastDrawnCard(drawnCard);
-          setIsFlipping(true);
+          setGameState(newState);
+          setMessage(newState.message);
+          setSelectedDeck(null);
+          setIsFlipping(false);
 
-          // Wait for flip animation to complete
-          setTimeout(() => {
-            setGameState(newState);
-            setMessage(newState.message);
-            setSelectedDeck(null);
-            setIsFlipping(false);
-
-            // Trigger confetti if won
-            if (newState.gameOver && newState.won) {
-              setShowConfetti(true);
-              setTimeout(() => setShowConfetti(false), 5000);
+          // Decrease hint rounds if active
+          if (hintsRoundsLeft > 0) {
+            const newRounds = hintsRoundsLeft - 1;
+            setHintsRoundsLeft(newRounds);
+            if (newRounds === 0) {
+              setShowProbabilities(false);
+              setMessage(newState.message + ' | Hint expired!');
+            } else {
+              setMessage(newState.message + ` | Hint rounds left: ${newRounds}`);
             }
+          }
 
-            if (!newState.gameOver) {
-              loadProbabilities();
-            }
+          // Trigger confetti if won
+          if (newState.gameOver && newState.won) {
+            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(false), 5000);
+          }
 
-            setLoading(false);
-          }, 800);
+          if (!newState.gameOver) {
+            loadProbabilities();
+          }
+
+          setLoading(false);
+        }, 800);
         }, 50); // Small delay to clear previous card
 
       } else {
@@ -187,11 +202,27 @@ const GameBoard = () => {
       setProbabilities({});
       setLastDrawnCard(null);
       setIsFlipping(false);
-      setShowConfetti(false);  // ADD THIS
+      setShowConfetti(false);
+      setHintsLeft(TOTAL_HINTS); // ADD THIS
+      setHintsRoundsLeft(0); // ADD THIS
+      setShowProbabilities(false); // ADD THIS
     } catch (error) {
       setMessage('Error resetting game!');
     }
     setLoading(false);
+  };
+
+  const handleHintClick = () => {
+    if (hintsLeft > 0 && hintsRoundsLeft === 0) {
+      setHintsLeft(hintsLeft - 1);
+      setHintsRoundsLeft(ROUNDS_PER_HINT);
+      setShowProbabilities(true);
+      setMessage(`💡 Hint activated! ${ROUNDS_PER_HINT} rounds remaining. Hints left: ${hintsLeft - 1}`);
+    } else if (hintsRoundsLeft > 0) {
+      setMessage(`Hint already active! ${hintsRoundsLeft} rounds remaining.`);
+    } else {
+      setMessage('No hints left!');
+    }
   };
 
   return (
@@ -279,11 +310,30 @@ const GameBoard = () => {
                 lastDrawnCard={lastDrawnCard}
                 isFlipping={isFlipping}
               />
+
+              {/* Hint Button */}
+              <div className="hint-container">
+                <button
+                  className="hint-button"
+                  onClick={handleHintClick}
+                  disabled={hintsLeft === 0 || loading}
+                  title={`Click to reveal probabilities for ${ROUNDS_PER_HINT} rounds`}
+                >
+                  💡
+                  {hintsLeft > 0 && (
+                    <span className="hint-badge">{hintsLeft}</span>
+                  )}
+                </button>
+                {hintsRoundsLeft > 0 && (
+                  <div className="hint-active-indicator">
+                    Active: {hintsRoundsLeft} rounds
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Right: Player Decks */}
             <div className="right-section">
-              <h3 className="section-title">Your Decks</h3>
               <div className="cards-container">
                 {gameState?.deckValues.map((card, index) => (
                   <Card
@@ -295,6 +345,7 @@ const GameBoard = () => {
                     isSelected={selectedDeck === index}
                     deckNumber={index + 1}
                     probability={probabilities[index]}
+                    showProbability={showProbabilities}
                   />
                 ))}
               </div>

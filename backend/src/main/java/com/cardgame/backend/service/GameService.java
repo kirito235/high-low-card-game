@@ -113,20 +113,31 @@ public class GameService {
         // Draw new card
         String newCard = drawRandomCard(currentGame.getRemainingCards());
 
-        // Check if deck is empty (player wins)
-        if (newCard == null) {
+        // Calculate score FIRST
+        int remainingCardsCount = getDeckSize(currentGame.getRemainingCards());
+        int score = TOTAL_CARDS - remainingCardsCount;
+
+        // Check if all 52 cards have been drawn (player wins)
+        if (score >= TOTAL_CARDS) {
+            currentGame.setScore(TOTAL_CARDS);
             currentGame.setGameOver(true);
             currentGame.setWon(true);
-            currentGame.setMessage("Congratulations! You won! All cards have been guessed.");
+            currentGame.setMessage("🎉 Congratulations! You won! You guessed all 52 cards! 🎉");
             return currentGame;
         }
 
+        // Check if deck is empty (shouldn't happen, but safety check)
+        if (newCard == null) {
+            currentGame.setScore(score);
+            currentGame.setGameOver(true);
+            currentGame.setWon(true);
+            currentGame.setMessage("🎉 Congratulations! You won! All cards have been guessed! 🎉");
+            return currentGame;
+        }
         // Check if guess is correct
         boolean correct = checkGuess(topCard, newCard, guess);
 
         // Calculate score
-        int remainingCardsCount = getDeckSize(currentGame.getRemainingCards());
-        int score = TOTAL_CARDS - remainingCardsCount;
         currentGame.setScore(score);
 
         if (correct) {
