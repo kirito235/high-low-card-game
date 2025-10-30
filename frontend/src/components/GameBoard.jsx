@@ -169,7 +169,6 @@ const GameBoard = () => {
 
           setLoading(false);
         }, 800);
-        }, 50); // Small delay to clear previous card
 
       } else {
         // Fallback
