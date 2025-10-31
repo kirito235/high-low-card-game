@@ -6,8 +6,27 @@ import Confetti from 'react-confetti';
 import '../styles/GameBoard.css';
 
 // Hint Configuration
-const TOTAL_HINTS = 3; // Customize: Total number of hints
-const ROUNDS_PER_HINT = 3; // Customize: How many rounds one hint lasts
+const TOTAL_HINTS = 3;
+const ROUNDS_PER_HINT = 3;
+
+// Helper function to convert card codes to full names in messages
+const convertCardNamesInMessage = (message) => {
+  const cardPattern = /\b([2-9]|10|[AJQK])([SHDC])\b/g;
+
+  const valueMap = {
+    'A': 'Ace', '2': 'Two', '3': 'Three', '4': 'Four', '5': 'Five',
+    '6': 'Six', '7': 'Seven', '8': 'Eight', '9': 'Nine', '10': 'Ten',
+    'J': 'Jack', 'Q': 'Queen', 'K': 'King'
+  };
+
+  const suitMap = {
+    'S': 'Spades', 'H': 'Hearts', 'D': 'Diamonds', 'C': 'Clubs'
+  };
+
+  return message.replace(cardPattern, (match, value, suit) => {
+    return `${valueMap[value]} of ${suitMap[suit]}`;
+  });
+};
 
 const GameBoard = () => {
   const [gameState, setGameState] = useState(null);
@@ -90,17 +109,18 @@ const GameBoard = () => {
       const state = await gameService.startGame(numDecks);
       setGameState(state);
       setIsStarted(true);
-      setMessage(state.message);
+      setMessage(convertCardNamesInMessage(state.message)); // UPDATE THIS
       setLastDrawnCard(null);
-      setHintsLeft(TOTAL_HINTS); // ADD THIS
-      setHintsRoundsLeft(0); // ADD THIS
-      setShowProbabilities(false); // ADD THIS
+      setHintsLeft(TOTAL_HINTS);
+      setHintsRoundsLeft(0);
+      setShowProbabilities(false);
       await loadProbabilities();
     } catch (error) {
       setMessage('Error starting game. Please wait 30 seconds and try again.');
     }
     setLoading(false);
   };
+
   const loadProbabilities = async () => {
     try {
       const probs = await gameService.getProbabilities();
@@ -125,10 +145,6 @@ const GameBoard = () => {
     setLoading(true);
     setMessage('Drawing card...');
 
-    // Clear previous drawn card immediately
-    setLastDrawnCard(null);
-    setIsFlipping(false);
-
     try {
       const deckNumber = selectedDeck + 1;
       const newState = await gameService.makeGuess(deckNumber, guess);
@@ -137,11 +153,19 @@ const GameBoard = () => {
       const cardMatch = newState.message.match(/(?:new card was|card was) ([A-K0-9]+[SHDC])/i);
       const drawnCard = cardMatch ? cardMatch[1] : null;
 
+      console.log('Drawn card:', drawnCard);
+      console.log('Game over:', newState.gameOver, 'Won:', newState.won);
+
       if (drawnCard) {
-        // Small delay to ensure previous card is cleared
+        // Set the drawn card and start flip animation
+        setLastDrawnCard(drawnCard);
+        setIsFlipping(true);
+
+        // Wait for flip animation to complete
         setTimeout(() => {
           setGameState(newState);
-          setMessage(newState.message);
+          const convertedMessage = convertCardNamesInMessage(newState.message);
+          setMessage(convertedMessage);
           setSelectedDeck(null);
           setIsFlipping(false);
 
@@ -151,30 +175,47 @@ const GameBoard = () => {
             setHintsRoundsLeft(newRounds);
             if (newRounds === 0) {
               setShowProbabilities(false);
-              setMessage(newState.message + ' | Hint expired!');
+              setMessage(convertedMessage + ' | Hint expired!');
             } else {
-              setMessage(newState.message + ` | Hint rounds left: ${newRounds}`);
+              setMessage(convertedMessage + ` | Hint rounds left: ${newRounds}`);
             }
           }
 
           // Trigger confetti if won
           if (newState.gameOver && newState.won) {
+            console.log('🎉 Triggering confetti!');
             setShowConfetti(true);
-            setTimeout(() => setShowConfetti(false), 5000);
+
+            // Keep confetti for 5 seconds
+            setTimeout(() => {
+              setShowConfetti(false);
+              console.log('Confetti ended');
+            }, 5000);
           }
+
+          // DON'T clear last drawn card when game ends - keep it visible
+          // The card should stay on screen showing the final draw
 
           if (!newState.gameOver) {
             loadProbabilities();
           }
 
           setLoading(false);
-        }, 800);
+        }, 1200); // Slightly longer for better visibility
 
       } else {
-        // Fallback
+        // Fallback - still show confetti if won
         setGameState(newState);
-        setMessage(newState.message);
+        const convertedMessage = convertCardNamesInMessage(newState.message);
+        setMessage(convertedMessage);
         setSelectedDeck(null);
+
+        if (newState.gameOver && newState.won) {
+          console.log('🎉 Triggering confetti (fallback)!');
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 5000);
+        }
+
         setLoading(false);
 
         if (!newState.gameOver) {
@@ -183,12 +224,12 @@ const GameBoard = () => {
       }
 
     } catch (error) {
+      console.error('Error making guess:', error);
       setMessage('Error making guess!');
       setIsFlipping(false);
       setLoading(false);
     }
   };
-
 
   const resetGame = async () => {
     setLoading(true);
@@ -228,14 +269,15 @@ const GameBoard = () => {
     <div className="game-board">
       <h1 className="game-title">🎴 High-Low Card Game 🎴</h1>
 
+      {/* Confetti Effect */}
       {showConfetti && (
-          <Confetti
-              width={window.innerWidth}
-              height={window.innerHeight}
-              recycle={false}
-              numberOfPieces={500}
-              gravity={0.3}
-          />
+        <Confetti
+          width={window.innerWidth}
+          height={window.innerHeight}
+          recycle={false}
+          numberOfPieces={500}
+          gravity={0.3}
+        />
       )}
 
       {!isStarted ? (
@@ -277,62 +319,44 @@ const GameBoard = () => {
         </div>
       ) : (
         <>
-          {/* Score Bar at Top */}
-          <div className="score-bar">
-            <div className="score-item">
-              <span className="score-label">Score</span>
-              <span className="score-value">{gameState?.score || 0}</span>
-            </div>
-            <div className="score-item">
-              <span className="score-label">Remaining Cards</span>
-              <span className="score-value">{52 - (gameState?.score || 0)}</span>
-            </div>
-            <div className="score-item">
-              <span className="score-label">Active Decks</span>
-              <span className="score-value">
-                {gameState?.deckValues.filter(v => v !== 'XX').length || 0}
-              </span>
-            </div>
+          {/* Hint Button - Fixed Top Right */}
+          <div className="hint-floating-topright">
+            <button
+              className="hint-button"
+              onClick={handleHintClick}
+              disabled={hintsLeft === 0 || loading}
+              title={`Click to reveal probabilities for ${ROUNDS_PER_HINT} rounds`}
+            >
+              💡
+              {hintsLeft > 0 && (
+                <span className="hint-badge">{hintsLeft}</span>
+              )}
+            </button>
+            {hintsRoundsLeft > 0 && (
+              <div className="hint-active-indicator">
+                {hintsRoundsLeft} rounds
+              </div>
+            )}
           </div>
 
-          {/* Message Display */}
+          {/* 1. Game Status Message */}
           <div className={`message-display ${gameState?.gameOver ? 'game-over' : ''} ${loading ? 'loading' : ''}`}>
             {loading && <span className="loading-spinner">⏳ </span>}
             {message}
           </div>
 
-          {/* Main Game Area */}
-          <div className="main-game-area">
-            {/* Left: Deck Display */}
-            <div className="left-section">
+          {/* 2. Game Area - Draw Deck + Player Decks */}
+          <div className="play-area">
+            {/* Left: Draw Deck */}
+            <div className="draw-deck-section">
               <DeckDisplay
                 lastDrawnCard={lastDrawnCard}
                 isFlipping={isFlipping}
               />
-
-              {/* Hint Button */}
-              <div className="hint-container">
-                <button
-                  className="hint-button"
-                  onClick={handleHintClick}
-                  disabled={hintsLeft === 0 || loading}
-                  title={`Click to reveal probabilities for ${ROUNDS_PER_HINT} rounds`}
-                >
-                  💡
-                  {hintsLeft > 0 && (
-                    <span className="hint-badge">{hintsLeft}</span>
-                  )}
-                </button>
-                {hintsRoundsLeft > 0 && (
-                  <div className="hint-active-indicator">
-                    Active: {hintsRoundsLeft} rounds
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* Right: Player Decks */}
-            <div className="right-section">
+            <div className="player-decks-section">
               <div className="cards-container">
                 {gameState?.deckValues.map((card, index) => (
                   <Card
@@ -351,7 +375,7 @@ const GameBoard = () => {
             </div>
           </div>
 
-          {/* Control Buttons */}
+          {/* 3. Control Buttons - Higher/Lower */}
           {!gameState?.gameOver && (
             <div className="controls">
               <button
@@ -371,13 +395,31 @@ const GameBoard = () => {
             </div>
           )}
 
-          {/* Reset Button */}
+          {/* 4. Score Bar */}
+          <div className="score-bar">
+            <div className="score-item">
+              <span className="score-label">Score</span>
+              <span className="score-value">{gameState?.score || 0}</span>
+            </div>
+            <div className="score-item">
+              <span className="score-label">Remaining Cards</span>
+              <span className="score-value">{52 - (gameState?.score || 0)}</span>
+            </div>
+            <div className="score-item">
+              <span className="score-label">Active Decks</span>
+              <span className="score-value">
+                {gameState?.deckValues.filter(v => v !== 'XX').length || 0}
+              </span>
+            </div>
+          </div>
+
+          {/* 5. Reset Button */}
           <button
             className="reset-button"
             onClick={resetGame}
             disabled={loading}
           >
-            {gameState?.gameOver ? 'Play Again' : 'Reset Game'}
+            {gameState?.gameOver ? '🎮 Play Again' : '🔄 Reset Game'}
           </button>
         </>
       )}

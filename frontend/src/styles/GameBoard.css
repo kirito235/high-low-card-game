@@ -1,10 +1,22 @@
 .game-board {
-  min-height: 100vh;
+  min-height: 125vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+
+  /* Auto 80% zoom - fixes white space */
+  zoom: 0.8;
+}
+
+/* Fallback for Firefox */
+@-moz-document url-prefix() {
+  .game-board {
+    transform: scale(0.8);
+    transform-origin: top center;
+  }
 }
 
 .game-title {
@@ -111,53 +123,102 @@
   margin-bottom: 8px;
 }
 
-/* Score Bar at Top */
-.score-bar {
-  display: flex;
-  justify-content: space-around;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 20px 40px;
-  border-radius: 15px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  margin-bottom: 20px;
-  width: 100%;
-  max-width: 1200px;
-  backdrop-filter: blur(10px);
-}
-
-.score-item {
+/* Hint Button - Fixed Top Right */
+.hint-floating-topright {
+  position: fixed;
+  top: 120px;
+  right: 30px;
+  z-index: 1000;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-.score-label {
-  font-size: 14px;
-  color: #7f8c8d;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+.hint-button {
+  position: relative;
+  background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+  color: white;
+  border: none;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  font-size: 40px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 20px rgba(243, 156, 18, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.score-value {
-  font-size: 36px;
+.hint-button:hover:not(:disabled) {
+  transform: scale(1.15);
+  box-shadow: 0 8px 30px rgba(243, 156, 18, 0.7);
+}
+
+.hint-button:active:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.hint-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+}
+
+.hint-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #e74c3c;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
   font-weight: bold;
-  color: #2c3e50;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  border: 4px solid white;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+}
+
+.hint-active-indicator {
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.5);
+  animation: glow-pulse 2s infinite;
+  white-space: nowrap;
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.5);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 4px 25px rgba(46, 204, 113, 0.8);
+    transform: scale(1.05);
+  }
 }
 
 /* Message Display */
 .message-display {
-  background: rgba(255, 255, 255, 0.9);
-  padding: 15px 30px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  font-size: 18px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px 40px;
+  border-radius: 15px;
+  margin: 20px 0;
+  font-size: 20px;
   color: #34495e;
   font-weight: 600;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  min-height: 50px;
+  min-height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -166,67 +227,80 @@
   width: 100%;
 }
 
-.message-display.game-over {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+.message-display.loading {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
   color: white;
+  animation: pulse 1.5s infinite;
+}
+
+.message-display.game-over {
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  color: white;
+  font-size: 24px;
   animation: message-pulse 1s infinite;
 }
 
-@keyframes message-pulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.02);
-  }
+.loading-spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  margin-right: 10px;
 }
 
-/* Main Game Area */
-.main-game-area {
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes message-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+/* Play Area - Horizontal Layout */
+.play-area {
   display: flex;
   gap: 40px;
+  align-items: flex-start;
+  justify-content: center;
   width: 100%;
   max-width: 1400px;
-  margin-bottom: 30px;
+  margin: 30px 0;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-.left-section {
+.draw-deck-section {
   flex: 0 0 auto;
 }
 
-.right-section {
+.player-decks-section {
   flex: 1;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: center;
 }
 
-.section-title {
-  color: white;
-  font-size: 28px;
-  margin-bottom: 20px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* Cards Container */
 .cards-container {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
   gap: 20px;
-  padding: 30px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  max-width: 1000px;
 }
 
 /* Control Buttons */
 .controls {
   display: flex;
   justify-content: center;
-  gap: 30px;
-  margin: 20px 0;
+  gap: 40px;
+  margin: 30px 0;
 }
 
 .guess-button {
@@ -267,23 +341,59 @@
   transform: none;
 }
 
+/* Score Bar */
+.score-bar {
+  display: flex;
+  justify-content: space-around;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 25px 50px;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  margin: 30px 0;
+  width: 100%;
+  max-width: 1200px;
+  backdrop-filter: blur(10px);
+}
+
+.score-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.score-label {
+  font-size: 14px;
+  color: #7f8c8d;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.score-value {
+  font-size: 36px;
+  font-weight: bold;
+  color: #2c3e50;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 /* Reset Button */
 .reset-button {
-  background: #34495e;
+  background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
   color: white;
   border: none;
-  padding: 15px 40px;
-  font-size: 16px;
+  padding: 18px 50px;
+  font-size: 18px;
   font-weight: 600;
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  margin-top: 20px;
+  margin: 20px 0 40px 0;
 }
 
 .reset-button:hover:not(:disabled) {
-  background: #2c3e50;
+  background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
@@ -295,23 +405,55 @@
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-  .main-game-area {
+  .play-area {
     flex-direction: column;
     align-items: center;
+    padding: 20px;
   }
 
-  .score-bar {
-    padding: 15px 20px;
+  .controls {
+    gap: 20px;
   }
 
-  .score-value {
-    font-size: 28px;
+  .guess-button {
+    padding: 15px 40px;
+    font-size: 20px;
   }
 }
 
 @media (max-width: 768px) {
   .game-title {
     font-size: 32px;
+  }
+
+  .hint-floating-topright {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin: 20px auto;
+  }
+
+  .hint-button {
+    width: 70px;
+    height: 70px;
+    font-size: 35px;
+  }
+
+  .hint-badge {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+    border: 3px solid white;
+  }
+
+  .message-display {
+    font-size: 16px;
+    padding: 15px 20px;
+  }
+
+  .play-area {
+    padding: 15px;
+    gap: 20px;
   }
 
   .score-bar {
@@ -321,17 +463,7 @@
   }
 
   .score-value {
-    font-size: 24px;
-  }
-
-  .message-display {
-    font-size: 16px;
-    padding: 12px 20px;
-  }
-
-  .cards-container {
-    gap: 15px;
-    padding: 20px;
+    font-size: 28px;
   }
 
   .controls {
@@ -340,106 +472,8 @@
   }
 
   .guess-button {
-    padding: 15px 40px;
-    font-size: 18px;
     width: 250px;
+    padding: 15px 30px;
+    font-size: 18px;
   }
-
-  .section-title {
-    font-size: 22px;
-  }
-}
-.message-display.loading {
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-  color: white;
-  animation: pulse 1.5s infinite;
-}
-
-.loading-spinner {
-  display: inline-block;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-/* Hint System */
-.hint-container {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.hint-button {
-  position: relative;
-  background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-  color: white;
-  border: none;
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  font-size: 36px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);
-}
-
-.hint-button:hover:not(:disabled) {
-  transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(243, 156, 18, 0.6);
-}
-
-.hint-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: #95a5a6;
-}
-
-.hint-badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: #e74c3c;
-  color: white;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  font-weight: bold;
-  border: 3px solid white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.hint-active-indicator {
-  background: rgba(46, 204, 113, 0.9);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  animation: pulse 1.5s infinite;
-}
-
-/* Make deck stack always visible */
-.deck-stack {
-  position: relative;
-  width: 140px;
-  height: 200px;
-  margin-bottom: 20px;
 }

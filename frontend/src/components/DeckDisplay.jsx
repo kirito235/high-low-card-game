@@ -35,7 +35,7 @@ const DeckDisplay = ({ lastDrawnCard, isFlipping }) => {
           <img src={getCardBackImage()} alt="Deck" className="deck-card deck-card-1" />
         </div>
 
-        {/* Drawn card area */}
+        {/* Drawn card area - Shows during and after flip */}
         {lastDrawnCard && (
           <div className="drawn-card-area">
             <div className={`drawn-card ${isFlipping ? 'flipping' : ''}`}>
