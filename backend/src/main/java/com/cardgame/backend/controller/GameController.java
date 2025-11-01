@@ -1,7 +1,7 @@
 package com.cardgame.backend.controller;
 
 import com.cardgame.backend.model.GameState;
-import com.cardgame.backend.model.GuessRequest;
+import com.cardgame.backend.dto.GuessRequest;
 import com.cardgame.backend.model.ProbabilityInfo;
 import com.cardgame.backend.service.GameService;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/game")
-@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 @RequiredArgsConstructor
 public class GameController {
 
