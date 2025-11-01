@@ -1,4 +1,4 @@
-package com.cardgame.backend.model;
+package com.cardgame.backend.dto;
 
 import lombok.Getter;
 import lombok.Setter;
