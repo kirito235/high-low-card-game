@@ -17,6 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private static final String[] baseGameAllowedUrls= {"/api/game/auth/google","/api/game/health","/api/game/auth/login","/api/game/auth/signup"};
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -30,7 +31,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/game/auth/google","/api/game/health").permitAll()
+                        .requestMatchers(baseGameAllowedUrls).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
