@@ -17,7 +17,7 @@ const Login = () => {
     try {
       const response = await api.post(`/auth/login`, { email, password });
       localStorage.setItem("jwt", response.data.jwt);
-      navigate("/dashboard");
+      navigate("/game");
     } catch (err) {
       setError(err.response?.data?.message || "Invalid credentials");
     }
@@ -25,9 +25,13 @@ const Login = () => {
 
   const handleGoogleSuccess = async (credentialResponse) => {
     const token = credentialResponse.credential;
+    try{
     const response = await api.post(`/auth/google`, { token });
     localStorage.setItem("jwt", response.data.jwt);
     navigate("/game");
+    }catch(err){    
+      setError(err.response?.data?.message || "Invalid credentials");
+    }
   };
 
   return (

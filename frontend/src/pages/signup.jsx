@@ -1,4 +1,4 @@
-import  { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../css/Signup.css";
 import api from "../api/axiosInstance";
@@ -11,7 +11,8 @@ const Signup = () => {
     password: "",
     confirmPassword: "",
   });
-  const [error, setError] = useState("");
+
+  const [errors, setErrors] = useState([]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -19,10 +20,18 @@ const Signup = () => {
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    setError("");
+    setErrors([]);
 
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match");
+    // Client-side validation
+    const tempErrors = [];
+    if (!form.username.trim()) tempErrors.push("Username is required");
+    if (!form.email.trim()) tempErrors.push("Email is required");
+    if (!form.password.trim()) tempErrors.push("Password is required");
+    if (form.password !== form.confirmPassword)
+      tempErrors.push("Passwords do not match");
+
+    if (tempErrors.length > 0) {
+      setErrors(tempErrors);
       return;
     }
 
@@ -32,10 +41,25 @@ const Signup = () => {
         email: form.email,
         password: form.password,
       });
+
       localStorage.setItem("jwt", response.data.jwt);
-      navigate("/dashboard");
+      navigate("/login");
     } catch (err) {
-      setError(err.response?.data?.message || "Signup failed");
+      const res = err.response?.data;
+      if (!res) {
+        setErrors(["Network error. Please try again later."]);
+        return;
+      }
+      const backendErrors = res.validationErrors
+        ? Object.values(res.validationErrors) 
+        : [];
+
+      const allErrors =
+        backendErrors.length > 0
+          ? backendErrors
+          : [res.message || "Signup failed. Please try again."];
+
+      setErrors(allErrors);
     }
   };
 
@@ -44,7 +68,16 @@ const Signup = () => {
       <div className="signup-card">
         <h2 className="signup-title">Sign Up</h2>
 
-        {error && <p className="error-message">{error}</p>}
+        {/* Error List */}
+        {errors.length > 0 && (
+          <ul className="error-list">
+            {errors.map((error, idx) => (
+              <li key={idx} className="error-message">
+                {error}
+              </li>
+            ))}
+          </ul>
+        )}
 
         <form onSubmit={handleSignup}>
           <div className="form-group">
