@@ -1,7 +1,7 @@
 package com.cardgame.backend.controller;
 
 import com.cardgame.backend.dto.JwtResponse;
-import com.cardgame.backend.dto.SignupRequest;
+import com.cardgame.backend.dto.LoginRequest;
 import com.cardgame.backend.service.AuthService;
 import com.cardgame.backend.service.GoogleAuthService;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +28,9 @@ public class AuthController {
         return Map.of("jwt", jwt);
     }
 
-    @PostMapping("/signup")
-    public ResponseEntity<JwtResponse> signup(@RequestBody SignupRequest request) {
-        JwtResponse response = authService.signup(request);
+    @PostMapping("/login")
+    public ResponseEntity<JwtResponse> login(@RequestBody LoginRequest request) {
+        JwtResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
 }
