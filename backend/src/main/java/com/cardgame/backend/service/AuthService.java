@@ -3,6 +3,7 @@ package com.cardgame.backend.service;
 import com.cardgame.backend.dto.JwtResponse;
 import com.cardgame.backend.dto.LoginRequest;
 import com.cardgame.backend.dto.SignupRequest;
+import com.cardgame.backend.entity.LoginType;
 import com.cardgame.backend.entity.User;
 import com.cardgame.backend.exception.UserException;
 import com.cardgame.backend.repo.UserRepository;
@@ -41,7 +42,7 @@ public class AuthService {
         var user = userRepository.findByEmail(request.email())
                 .orElse(null);
 
-        if (user == null || !passwordEncoder.matches(request.password(), user.getPassword())) {
+        if (user == null ||  !LoginType.LOCAL.equals(user.getLoginType()) || !passwordEncoder.matches(request.password(), user.getPassword()) ) {
             throw new UserException("Invalid credentials");
         }
         var token = getToken(user.getEmail(), user.getUsername());

@@ -34,6 +34,14 @@ public class JwtUtil {
                 .getBody()
                 .get("name", String.class);
     }
+    public String extractEmail(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+    }
 
     public boolean validateToken(String token) {
         try {
