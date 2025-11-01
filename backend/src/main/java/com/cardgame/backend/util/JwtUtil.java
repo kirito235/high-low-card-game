@@ -1,8 +1,11 @@
 package com.cardgame.backend.util;
 
 import com.cardgame.backend.config.GoogleProperties;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +18,13 @@ import java.util.Date;
 public class JwtUtil {
 
     private final GoogleProperties googleProperties;
-    private final SecretKey key = Keys.hmacShaKeyFor(googleProperties.getClientSecret().getBytes(StandardCharsets.UTF_8));
+    private SecretKey key;
+
+    @PostConstruct
+    public void postConstruct() {
+        key = Keys.hmacShaKeyFor(googleProperties.getClientSecret().getBytes(StandardCharsets.UTF_8));
+    }
+
 
     public String extractUsername(String token) {
         return Jwts.parserBuilder()
