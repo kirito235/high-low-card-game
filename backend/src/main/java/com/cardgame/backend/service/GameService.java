@@ -2,16 +2,18 @@ package com.cardgame.backend.service;
 
 import com.cardgame.backend.model.GameState;
 import com.cardgame.backend.model.ProbabilityInfo;
+import lombok.Getter;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 @Service
+@Getter
 public class GameService {
 
     private static final int TOTAL_CARDS = 52;
     private GameState currentGame;
-
+    Random rand = new Random();
     public GameService() {
         this.currentGame = null;
     }
@@ -28,7 +30,7 @@ public class GameService {
         currentGame.setNumDecks(numDecks);
 
         // Initialize the card deck
-        HashMap<String, ArrayList<String>> cards = initializeCards();
+        Map<String, ArrayList<String>> cards = initializeCards();
         currentGame.setRemainingCards(cards);
 
         // Initialize deck values (top card for each deck)
@@ -46,8 +48,8 @@ public class GameService {
     /**
      * Initialize all 52 cards
      */
-    private HashMap<String, ArrayList<String>> initializeCards() {
-        HashMap<String, ArrayList<String>> cards = new HashMap<>();
+    private Map<String, ArrayList<String>> initializeCards() {
+        Map<String, ArrayList<String>> cards = new HashMap<>();
         String[] suits = {"S", "C", "H", "D"};
         String[] values = {"A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"};
 
@@ -65,8 +67,7 @@ public class GameService {
     /**
      * Draw a random card from remaining cards
      */
-    private String drawRandomCard(HashMap<String, ArrayList<String>> cards) {
-        Random rand = new Random();
+    private String drawRandomCard(Map<String, ArrayList<String>> cards) {
         ArrayList<String> suitList = new ArrayList<>(cards.keySet());
 
         if (suitList.isEmpty()) {
@@ -211,7 +212,7 @@ public class GameService {
     /**
      * Get total remaining cards
      */
-    private int getDeckSize(HashMap<String, ArrayList<String>> cards) {
+    private int getDeckSize(Map<String, ArrayList<String>> cards) {
         int size = 0;
         for (ArrayList<String> list : cards.values()) {
             size += list.size();
@@ -238,7 +239,7 @@ public class GameService {
         int lowerCount = 0;
         int equalCount = 0;
 
-        HashMap<String, ArrayList<String>> cards = currentGame.getRemainingCards();
+        Map<String, ArrayList<String>> cards = currentGame.getRemainingCards();
 
         for (ArrayList<String> list : cards.values()) {
             for (String card : list) {
@@ -255,13 +256,6 @@ public class GameService {
 
         int total = getDeckSize(cards);
         return new ProbabilityInfo(higherCount, lowerCount, equalCount, total);
-    }
-
-    /**
-     * Get current game state
-     */
-    public GameState getCurrentGame() {
-        return currentGame;
     }
 
     /**

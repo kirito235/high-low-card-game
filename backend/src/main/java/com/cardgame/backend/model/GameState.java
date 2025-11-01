@@ -3,9 +3,10 @@ package com.cardgame.backend.model;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GameState {
-    private HashMap<String, ArrayList<String>> remainingCards;
+    private Map<String, ArrayList<String>> remainingCards;
     private List<String> deckValues;  // Current top card of each deck
     private int numDecks;
     private int score;
@@ -21,11 +22,11 @@ public class GameState {
     }
 
     // Getters and Setters
-    public HashMap<String, ArrayList<String>> getRemainingCards() {
+    public Map<String, ArrayList<String>> getRemainingCards() {
         return remainingCards;
     }
 
-    public void setRemainingCards(HashMap<String, ArrayList<String>> remainingCards) {
+    public void setRemainingCards(Map<String, ArrayList<String>> remainingCards) {
         this.remainingCards = remainingCards;
     }
 
