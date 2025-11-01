@@ -10,6 +10,7 @@ app:
       - "DELETE"
       - "OPTIONS"
   google:
+    dummy-password: "oauth-user-password"
     client-id: ${GAME_SYSTEM_GOOGLE_CLIENT_ID}
     client-secret: ${GAME_SYSTEM_GOOGLE_CLIENT_SECRET}
 spring:

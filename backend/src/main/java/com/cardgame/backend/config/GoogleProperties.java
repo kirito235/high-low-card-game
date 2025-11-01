@@ -12,4 +12,5 @@ import lombok.Setter;
 public class GoogleProperties {
     private String clientId;
     private String clientSecret;
+    private String dummyPassword;
 }
