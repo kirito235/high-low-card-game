@@ -12,11 +12,9 @@ import java.util.*;
 public class GameService {
 
     private static final int TOTAL_CARDS = 52;
+    private final Random rand = new Random();
+
     private GameState currentGame;
-    Random rand = new Random();
-    public GameService() {
-        this.currentGame = null;
-    }
 
     /**
      * Initialize a new game with specified number of decks
@@ -30,11 +28,11 @@ public class GameService {
         currentGame.setNumDecks(numDecks);
 
         // Initialize the card deck
-        Map<String, ArrayList<String>> cards = initializeCards();
+        var cards = initializeCards();
         currentGame.setRemainingCards(cards);
 
         // Initialize deck values (top card for each deck)
-        List<String> deckValues = new ArrayList<>();
+        var deckValues = new ArrayList<String>();
         for (int i = 0; i < numDecks; i++) {
             deckValues.add(drawRandomCard(cards));
         }
@@ -48,8 +46,8 @@ public class GameService {
     /**
      * Initialize all 52 cards
      */
-    private Map<String, ArrayList<String>> initializeCards() {
-        Map<String, ArrayList<String>> cards = new HashMap<>();
+    private Map<String, List<String>> initializeCards() {
+        Map<String, List<String>> cards = new HashMap<>();
         String[] suits = {"S", "C", "H", "D"};
         String[] values = {"A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"};
 
@@ -67,16 +65,16 @@ public class GameService {
     /**
      * Draw a random card from remaining cards
      */
-    private String drawRandomCard(Map<String, ArrayList<String>> cards) {
-        ArrayList<String> suitList = new ArrayList<>(cards.keySet());
+    private String drawRandomCard(Map<String, List<String>> cards) {
+        var suitList = new ArrayList<>(cards.keySet());
 
         if (suitList.isEmpty()) {
             return null;
         }
 
-        String randomSuit = suitList.get(rand.nextInt(suitList.size()));
-        ArrayList<String> suitCards = cards.get(randomSuit);
-        String pickedCard = suitCards.remove(rand.nextInt(suitCards.size()));
+        var randomSuit = suitList.get(rand.nextInt(suitList.size()));
+        var suitCards = cards.get(randomSuit);
+        var pickedCard = suitCards.remove(rand.nextInt(suitCards.size()));
 
         // Remove suit if empty
         if (suitCards.isEmpty()) {
@@ -112,7 +110,7 @@ public class GameService {
         }
 
         // Draw new card
-        String newCard = drawRandomCard(currentGame.getRemainingCards());
+        var newCard = drawRandomCard(currentGame.getRemainingCards());
 
         // Calculate score FIRST
         int remainingCardsCount = getDeckSize(currentGame.getRemainingCards());
@@ -212,9 +210,9 @@ public class GameService {
     /**
      * Get total remaining cards
      */
-    private int getDeckSize(Map<String, ArrayList<String>> cards) {
+    private int getDeckSize(Map<String, List<String>> cards) {
         int size = 0;
-        for (ArrayList<String> list : cards.values()) {
+        for (var list : cards.values()) {
             size += list.size();
         }
         return size;
@@ -239,9 +237,9 @@ public class GameService {
         int lowerCount = 0;
         int equalCount = 0;
 
-        Map<String, ArrayList<String>> cards = currentGame.getRemainingCards();
+        var cards = currentGame.getRemainingCards();
 
-        for (ArrayList<String> list : cards.values()) {
+        for (var list : cards.values()) {
             for (String card : list) {
                 int cardValue = getCardValue(card);
                 if (cardValue > topValue) {

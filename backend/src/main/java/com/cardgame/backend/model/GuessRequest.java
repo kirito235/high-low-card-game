@@ -1,5 +1,10 @@
 package com.cardgame.backend.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class GuessRequest {
     private int deckNumber;
     private String guess;  // "h" or "l"
@@ -8,22 +13,6 @@ public class GuessRequest {
 
     public GuessRequest(int deckNumber, String guess) {
         this.deckNumber = deckNumber;
-        this.guess = guess;
-    }
-
-    public int getDeckNumber() {
-        return deckNumber;
-    }
-
-    public void setDeckNumber(int deckNumber) {
-        this.deckNumber = deckNumber;
-    }
-
-    public String getGuess() {
-        return guess;
-    }
-
-    public void setGuess(String guess) {
         this.guess = guess;
     }
 }
