@@ -1,8 +1,6 @@
 app:
   cors:
-    allowed-origins:
-      - "http://localhost:3000"
-      - "https://your-frontend-domain.com"
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
     allowed-methods:
       - "GET"
       - "POST"
