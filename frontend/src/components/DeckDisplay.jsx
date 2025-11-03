@@ -35,17 +35,32 @@ const DeckDisplay = ({ lastDrawnCard, isFlipping }) => {
           <img src={getCardBackImage()} alt="Deck" className="deck-card deck-card-1" />
         </div>
 
-        {/* Drawn card area - Shows during and after flip */}
-        {lastDrawnCard && (
-          <div className="drawn-card-area">
-            <div className={`drawn-card ${isFlipping ? 'flipping' : ''}`}>
-              <img src={getCardImagePath(lastDrawnCard)} alt={getFullCardName(lastDrawnCard)} />
-            </div>
-            <div className="last-drawn-label">
-              Last Drawn: {getFullCardName(lastDrawnCard)}
-            </div>
+        {/* Last Drawn Card Area - ALWAYS VISIBLE RECTANGLE */}
+        <div className="drawn-card-area">
+          <div className="drawn-card-label">Last Drawn Card</div>
+
+          <div className="drawn-card-frame">
+            {lastDrawnCard ? (
+              <div className={`drawn-card ${isFlipping ? 'flipping' : ''}`}>
+                <img
+                  src={getCardImagePath(lastDrawnCard)}
+                  alt={getFullCardName(lastDrawnCard)}
+                  key={lastDrawnCard}
+                />
+              </div>
+            ) : (
+              <div className="no-card-placeholder">
+                <span>No card drawn yet</span>
+              </div>
+            )}
           </div>
-        )}
+
+          {lastDrawnCard && (
+            <div className="last-drawn-name">
+              {getFullCardName(lastDrawnCard)}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

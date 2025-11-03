@@ -2,19 +2,18 @@
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border-radius: 20px;
-  padding: 30px;
+  padding: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  min-width: 280px;
+  min-width: 300px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 500px; /* ADD THIS - ensures it doesn't collapse */
 }
 
 .deck-display h3 {
   color: white;
-  font-size: 24px;
-  margin-bottom: 25px;
+  font-size: 20px;
+  margin-bottom: 20px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
@@ -22,7 +21,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 30px;
+  gap: 25px;
   width: 100%;
 }
 
@@ -61,22 +60,45 @@
   z-index: 1;
   opacity: 0.6;
 }
-/* Drawn card area */
+
+/* Last Drawn Card Area - ALWAYS VISIBLE */
 .drawn-card-area {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 15px;
-  min-height: 250px; /* ADD THIS - keeps space even when animating */
+  gap: 12px;
+  width: 100%;
 }
 
+.drawn-card-label {
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Frame that's always visible */
+.drawn-card-frame {
+  width: 150px;
+  height: 210px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: visible;
+}
+
+/* The actual card inside the frame */
 .drawn-card {
   width: 140px;
   height: 200px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-  transform-origin: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  position: relative;
 }
 
 .drawn-card img {
@@ -84,34 +106,109 @@
   height: 100%;
   object-fit: cover;
   border-radius: 12px;
+  display: block;
 }
 
-/* Flip animation */
+/* Fast flip animation */
 .drawn-card.flipping {
-  animation: card-flip-appear 1.2s ease-out;
+  animation: quick-flip 0.4s ease-out;
 }
 
-@keyframes card-flip-appear {
+@keyframes quick-flip {
   0% {
-    transform: rotateY(-90deg) scale(0.5);
-    opacity: 0;
+    transform: scale(0.8) rotateY(-20deg);
+    opacity: 0.5;
   }
   50% {
-    transform: rotateY(0deg) scale(1.1);
+    transform: scale(1.05) rotateY(0deg);
     opacity: 1;
   }
   100% {
-    transform: rotateY(0deg) scale(1);
+    transform: scale(1) rotateY(0deg);
     opacity: 1;
   }
 }
 
-.last-drawn-label {
+/* Placeholder when no card */
+.no-card-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  text-align: center;
+  font-style: italic;
+}
+
+/* Card name below */
+.last-drawn-name {
   color: white;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   background: rgba(0, 0, 0, 0.3);
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: 10px;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .deck-display {
+    min-width: 260px;
+    padding: 15px;
+  }
+
+  .deck-stack,
+  .deck-card {
+    width: 120px;
+    height: 170px;
+  }
+
+  .drawn-card-frame {
+    width: 130px;
+    height: 180px;
+  }
+
+  .drawn-card {
+    width: 120px;
+    height: 170px;
+  }
+}
+
+@media (max-width: 768px) {
+  .deck-display {
+    min-width: 220px;
+    padding: 12px;
+  }
+
+  .deck-display h3 {
+    font-size: 16px;
+  }
+
+  .deck-stack,
+  .deck-card {
+    width: 100px;
+    height: 140px;
+  }
+
+  .drawn-card-frame {
+    width: 110px;
+    height: 150px;
+  }
+
+  .drawn-card {
+    width: 100px;
+    height: 140px;
+  }
+
+  .last-drawn-name {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
 }

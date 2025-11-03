@@ -42,6 +42,8 @@ const GameBoard = () => {
   const [hintsLeft, setHintsLeft] = useState(3); // ADD THIS - Number of hints
   const [hintsRoundsLeft, setHintsRoundsLeft] = useState(0); // ADD THIS - Rounds hint is active
   const [showProbabilities, setShowProbabilities] = useState(false); // ADD THIS
+  const [showRules, setShowRules] = useState(false);
+  const [isBackendLoading, setIsBackendLoading] = useState(true);
 
   useEffect(() => {
     const keepAwake = setInterval(async () => {
@@ -60,16 +62,51 @@ const GameBoard = () => {
   // Initial ping when component mounts to wake backend immediately
   useEffect(() => {
     const wakeBackend = async () => {
+      setIsBackendLoading(true);
       try {
         await gameService.healthCheck();
         console.log('🚀 Backend woke up on page load');
+        setIsBackendLoading(false);
       } catch (error) {
         console.log('⏳ Backend is waking up...');
+        // Retry after 2 seconds
+        setTimeout(async () => {
+          try {
+            await gameService.healthCheck();
+            console.log('🚀 Backend woke up after retry');
+            setIsBackendLoading(false);
+          } catch (err) {
+            console.log('⏳ Still waiting for backend...');
+            setIsBackendLoading(false); // Stop blocking UI after retry
+          }
+        }, 2000);
       }
     };
 
     wakeBackend();
   }, []);
+
+  // Keyboard controls for start screen
+  useEffect(() => {
+    if (!isStarted && !loading) {
+      const handleStartScreenKeys = (event) => {
+        // Arrow keys to adjust number of decks
+        if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          setNumDecks(prev => Math.min(10, prev + 1));
+        } else if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          setNumDecks(prev => Math.max(6, prev - 1));
+        } else if (event.key === 'Enter') {
+          event.preventDefault();
+          startGame();
+        }
+      };
+
+      window.addEventListener('keydown', handleStartScreenKeys);
+      return () => window.removeEventListener('keydown', handleStartScreenKeys);
+    }
+  }, [isStarted, loading, numDecks]);
 
   // Keyboard controls for Higher/Lower
   useEffect(() => {
@@ -201,7 +238,7 @@ const GameBoard = () => {
           }
 
           setLoading(false);
-        }, 1200); // Slightly longer for better visibility
+        }, 300); // Slightly longer for better visibility
 
       } else {
         // Fallback - still show confetti if won
@@ -268,6 +305,21 @@ const GameBoard = () => {
   return (
     <div className="game-board">
       <h1 className="game-title">🎴 High-Low Card Game 🎴</h1>
+
+      {/* Backend Loading Screen */}
+          {isBackendLoading && (
+            <div className="loading-overlay">
+              <div className="loading-content">
+                <div className="loading-spinner-large">⏳</div>
+                <h2>Waking up the server...</h2>
+                <p>This may take up to 30 seconds on first load</p>
+                <div className="loading-bar">
+                  <div className="loading-bar-fill"></div>
+                </div>
+                <p className="loading-tip">💡 Tip: The game will load faster on subsequent visits!</p>
+              </div>
+            </div>
+          )}
 
       {/* Confetti Effect */}
       {showConfetti && (
@@ -338,6 +390,63 @@ const GameBoard = () => {
               </div>
             )}
           </div>
+
+          {/* How to Play Button - Fixed Top Left */}
+          <div className="rules-button-container">
+            <button
+              className="rules-button"
+              onClick={() => setShowRules(true)}
+              title="How to Play"
+            >
+              ❓
+            </button>
+          </div>
+
+          {/* Rules Modal */}
+          {showRules && (
+            <div className="rules-modal-overlay" onClick={() => setShowRules(false)}>
+              <div className="rules-modal" onClick={(e) => e.stopPropagation()}>
+                <button className="close-modal" onClick={() => setShowRules(false)}>×</button>
+                <h2>🎴 How to Play</h2>
+                <div className="rules-content">
+                  <h3>📋 Game Rules:</h3>
+                  <ul>
+                    <li><strong>Objective:</strong> Guess all 52 cards correctly!</li>
+                    <li><strong>Select a deck</strong> by clicking on it (glows blue)</li>
+                    <li><strong>Guess:</strong> Will the next card be Higher or Lower?</li>
+                    <li><strong>Correct:</strong> New card becomes the top card ✅</li>
+                    <li><strong>Wrong:</strong> That deck is eliminated ❌</li>
+                    <li><strong>Win:</strong> Guess all 52 cards before losing all decks!</li>
+                  </ul>
+
+                  <h3>⌨️ Keyboard Shortcuts:</h3>
+                  <ul>
+                    <li><strong>↑ Arrow Up</strong> or <strong>H</strong> → Higher</li>
+                    <li><strong>↓ Arrow Down</strong> or <strong>L</strong> → Lower</li>
+                  </ul>
+
+                  <h3>💡 Hints:</h3>
+                  <ul>
+                    <li>Click the <strong>💡 Hint button</strong> (top right)</li>
+                    <li>Shows probabilities for {ROUNDS_PER_HINT} rounds</li>
+                    <li>You have <strong>{TOTAL_HINTS} hints</strong> per game</li>
+                  </ul>
+
+                  <h3>🎯 Strategy Tips:</h3>
+                  <ul>
+                    <li>Use hints wisely on difficult decisions</li>
+                    <li>Remember which cards have been played</li>
+                    <li>Low cards (2-6) are more likely to go higher</li>
+                    <li>High cards (9-K) are more likely to go lower</li>
+                    <li>Middle cards (7-8) are tricky!</li>
+                  </ul>
+                </div>
+                <button className="close-button-modal" onClick={() => setShowRules(false)}>
+                  Got it! 🎮
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* 1. Game Status Message */}
           <div className={`message-display ${gameState?.gameOver ? 'game-over' : ''} ${loading ? 'loading' : ''}`}>
