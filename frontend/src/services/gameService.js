@@ -1,14 +1,10 @@
-import axios from 'axios';
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081/api/game';
-
-//const API_BASE_URL = 'https://high-low-card-game.onrender.com/api/game';
-//const API_BASE_URL = 'http://localhost:3000';
+import api from '../api/axiosInstance';
 
 const gameService = {
   // Start a new game
   startGame: async (numDecks) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/start`, { numDecks });
+      const response = await api.post(`/start`, { numDecks });
       return response.data;
     } catch (error) {
       console.error('Error starting game:', error);
@@ -19,7 +15,7 @@ const gameService = {
   // Make a guess
   makeGuess: async (deckNumber, guess) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/guess`, {
+      const response = await api.post(`/guess`, {
         deckNumber,
         guess
       });
@@ -33,7 +29,7 @@ const gameService = {
   // Get current game state
   getGameState: async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/state`);
+      const response = await api.get(`/state`);
       return response.data;
     } catch (error) {
       console.error('Error getting game state:', error);
@@ -44,7 +40,7 @@ const gameService = {
   // Get probabilities for all decks
   getProbabilities: async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/probabilities`);
+      const response = await api.get(`/probabilities`);
       return response.data;
     } catch (error) {
       console.error('Error getting probabilities:', error);
@@ -55,7 +51,7 @@ const gameService = {
   // Reset game
   resetGame: async () => {
     try {
-      await axios.post(`${API_BASE_URL}/reset`);
+      await api.post(`/reset`);
     } catch (error) {
       console.error('Error resetting game:', error);
       throw error;
@@ -65,7 +61,7 @@ const gameService = {
   // Health check
   healthCheck: async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/health`);
+      const response = await api.get(`/health`);
       return response.data;
     } catch (error) {
       console.error('Error checking health:', error);

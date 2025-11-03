@@ -1,10 +1,10 @@
 package com.cardgame.backend.controller;
 
 import com.cardgame.backend.model.GameState;
-import com.cardgame.backend.model.GuessRequest;
+import com.cardgame.backend.dto.GuessRequest;
 import com.cardgame.backend.model.ProbabilityInfo;
 import com.cardgame.backend.service.GameService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,12 +14,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/game")
-@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
-
+@RequiredArgsConstructor
 public class GameController {
 
-    @Autowired
-    private GameService gameService;
+    private final GameService gameService;
 
     /**
      * Start a new game
