@@ -187,19 +187,25 @@ const GameBoard = () => {
       const newState = await gameService.makeGuess(deckNumber, guess);
 
       // Extract the drawn card from the backend message
-      const cardMatch = newState.message.match(/(?:new card was|card was) ([A-K0-9]+[SHDC])/i);
+      // Updated pattern to catch "final card was" or "card was" or "new card was"
+      const cardMatch = newState.message.match(/(?:final card was|new card was|card was) ([A-K0-9]+[SHDC])/i);
       const drawnCard = cardMatch ? cardMatch[1] : null;
 
-      console.log('Drawn card:', drawnCard);
-      console.log('Game over:', newState.gameOver, 'Won:', newState.won);
+      console.log('=== GUESS DEBUG ===');
+      console.log('Message:', newState.message);
+      console.log('Extracted card:', drawnCard);
+      console.log('Game over:', newState.gameOver);
+      console.log('Won:', newState.won);
+      console.log('===================');
 
       if (drawnCard) {
-        // Set the drawn card and start flip animation
+        // ALWAYS set the drawn card first
         setLastDrawnCard(drawnCard);
         setIsFlipping(true);
 
         // Wait for flip animation to complete
         setTimeout(() => {
+          // Update game state
           setGameState(newState);
           const convertedMessage = convertCardNamesInMessage(newState.message);
           setMessage(convertedMessage);
@@ -223,25 +229,24 @@ const GameBoard = () => {
             console.log('🎉 Triggering confetti!');
             setShowConfetti(true);
 
-            // Keep confetti for 5 seconds
+            // Keep confetti for 10 seconds
             setTimeout(() => {
               setShowConfetti(false);
               console.log('Confetti ended');
-            }, 5000);
+            }, 10000);
           }
 
-          // DON'T clear last drawn card when game ends - keep it visible
-          // The card should stay on screen showing the final draw
-
+          // Load probabilities only if game continues
           if (!newState.gameOver) {
             loadProbabilities();
           }
 
           setLoading(false);
-        }, 300); // Slightly longer for better visibility
+        }, 500); // 500ms for smooth animation
 
       } else {
-        // Fallback - still show confetti if won
+        // Fallback if card extraction fails
+        console.warn('⚠️ Could not extract card from message');
         setGameState(newState);
         const convertedMessage = convertCardNamesInMessage(newState.message);
         setMessage(convertedMessage);
@@ -359,13 +364,33 @@ const GameBoard = () => {
           <div className="rules">
             <h3>How to Play:</h3>
             <ul>
-              <li>Select a deck by clicking on it</li>
-              <li>Guess if the next card will be Higher or Lower</li>
-              <li><strong>⌨️ Use Arrow Keys:</strong> ↑ for Higher, ↓ for Lower</li>
-              <li><strong>Or press:</strong> H for Higher, L for Lower</li>
-              <li>If correct, the new card becomes the top card</li>
-              <li>If wrong, that deck is eliminated</li>
-              <li>Try to guess as many cards as possible!</li>
+              <li>The objective of the game is to guess all the cards</li>
+              <li>There will be the selected number of decks present having face up.</li>
+              <li>Among now user have to select any deck and guess whether the newly drawn card is higher or lower than the original card.</li>
+              <li>If correct, the new card becomes the top card of that particular deck</li>
+              <li>If wrong, that deck is eliminated and you can not play with that deck</li>
+              <li>Higher the number of remaining decks, higher the probability of winning.</li>
+            </ul>
+            <h3>Keyboard Shortcuts:</h3>
+              <ul>
+                <li><strong>↑ Arrow Up</strong> or <strong>H</strong> → Higher</li>
+                <li><strong>↓ Arrow Down</strong> or <strong>L</strong> → Lower</li>
+              </ul>
+
+            <h3>Hints:</h3>
+            <ul>
+              <li>Click the <strong>💡 Hint button</strong> (top right)</li>
+              <li>Shows probabilities for {ROUNDS_PER_HINT} rounds</li>
+              <li>You have <strong>{TOTAL_HINTS} hints</strong> per game</li>
+            </ul>
+
+            <h3>Strategy Tips:</h3>
+            <ul>
+              <li>Use hints wisely on difficult decisions</li>
+              <li>Remember which cards have been played</li>
+              <li>Low cards (2-6) are more likely to go higher</li>
+              <li>High cards (9-K) are more likely to go lower</li>
+              <li>Middle cards (7-8) are tricky!</li>
             </ul>
           </div>
         </div>

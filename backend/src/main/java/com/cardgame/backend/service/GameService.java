@@ -117,12 +117,24 @@ public class GameService {
         int remainingCardsCount = getDeckSize(currentGame.getRemainingCards());
         int score = TOTAL_CARDS - remainingCardsCount;
 
+        // Check if guess is correct BEFORE checking victory
+        boolean correct = checkGuess(topCard, newCard, guess);
+
         // Check if all 52 cards have been drawn (player wins)
-        if (score >= TOTAL_CARDS) {
+        if (score >= TOTAL_CARDS || remainingCardsCount == 0) {
             currentGame.setScore(TOTAL_CARDS);
             currentGame.setGameOver(true);
             currentGame.setWon(true);
-            currentGame.setMessage("🎉 Congratulations! You won! You guessed all 52 cards! 🎉");
+
+            // IMPORTANT: Include the last card in the message
+            if (correct) {
+                currentGame.getDeckValues().set(deckNumber - 1, newCard);
+                currentGame.setMessage("🎉 Congratulations! You won! The final card was " + newCard + ". You guessed all 52 cards! 🎉");
+            } else {
+                currentGame.getDeckValues().set(deckNumber - 1, "XX");
+                currentGame.setMessage("🎉 Congratulations! You won! The final card was " + newCard + ". You guessed all 52 cards! 🎉");
+            }
+
             return currentGame;
         }
 
@@ -134,8 +146,6 @@ public class GameService {
             currentGame.setMessage("🎉 Congratulations! You won! All cards have been guessed! 🎉");
             return currentGame;
         }
-        // Check if guess is correct
-        boolean correct = checkGuess(topCard, newCard, guess);
 
         // Calculate score
         currentGame.setScore(score);
