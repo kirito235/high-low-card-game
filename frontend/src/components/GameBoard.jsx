@@ -108,6 +108,68 @@ const GameBoard = () => {
     }
   }, [isStarted, loading, numDecks]);
 
+  // Keyboard controls for Higher/Lower AND Deck Selection
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      // Only process if game is active
+      if (!isStarted || gameState?.gameOver || loading) {
+        return;
+      }
+
+      // Number keys 1-9, 0 for deck selection
+      if (event.key >= '1' && event.key <= '9') {
+        const deckIndex = parseInt(event.key) - 1;
+
+        // Check if deck exists and is not eliminated
+        if (gameState?.deckValues && deckIndex < gameState.deckValues.length) {
+          const deckValue = gameState.deckValues[deckIndex];
+          if (deckValue !== 'XX') {
+            event.preventDefault();
+            setSelectedDeck(deckIndex);
+            console.log(`Selected Deck ${event.key}`);
+          } else {
+            console.log(`Deck ${event.key} is eliminated`);
+          }
+        }
+      }
+
+      // Key '0' for 10th deck (if it exists)
+      if (event.key === '0') {
+        const deckIndex = 9; // 10th deck
+        if (gameState?.deckValues && deckIndex < gameState.deckValues.length) {
+          const deckValue = gameState.deckValues[deckIndex];
+          if (deckValue !== 'XX') {
+            event.preventDefault();
+            setSelectedDeck(deckIndex);
+            console.log('Selected Deck 10');
+          } else {
+            console.log('Deck 10 is eliminated');
+          }
+        }
+      }
+
+      // Arrow Up or 'H' for Higher (only if deck is selected)
+      if ((event.key === 'ArrowUp' || event.key.toLowerCase() === 'h') && selectedDeck !== null) {
+        event.preventDefault();
+        makeGuess('h');
+      }
+
+      // Arrow Down or 'L' for Lower (only if deck is selected)
+      if ((event.key === 'ArrowDown' || event.key.toLowerCase() === 'l') && selectedDeck !== null) {
+        event.preventDefault();
+        makeGuess('l');
+      }
+    };
+
+    // Add event listener
+    window.addEventListener('keydown', handleKeyPress);
+
+    // Cleanup function to remove listener
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [isStarted, gameState, selectedDeck, loading]); // Dependencies
+
   // Keyboard controls for Higher/Lower
   useEffect(() => {
     const handleKeyPress = (event) => {
@@ -364,15 +426,16 @@ const GameBoard = () => {
           <div className="rules">
             <h3>How to Play:</h3>
             <ul>
-              <li>The objective of the game is to guess all the cards</li>
-              <li>There will be the selected number of decks present having face up.</li>
-              <li>Among now user have to select any deck and guess whether the newly drawn card is higher or lower than the original card.</li>
-              <li>If correct, the new card becomes the top card of that particular deck</li>
-              <li>If wrong, that deck is eliminated and you can not play with that deck</li>
-              <li>Higher the number of remaining decks, higher the probability of winning.</li>
+                <li>The objective of the game is to guess all the cards correctly.</li>
+                <li>The selected number of decks will be placed face-up.</li>
+                <li>The player must choose a deck and guess whether the next drawn card will be higher or lower than the current top card.</li>
+                <li>If the guess is correct, the new card replaces the top card of that deck.</li>
+                <li>If the guess is wrong, that deck is eliminated and can no longer be used.</li>
+                <li>The more decks you keep in play, the higher your chances of winning.</li>
             </ul>
             <h3>Keyboard Shortcuts:</h3>
               <ul>
+                <li><strong>1-9, 0</strong> → Select Deck 1-10</li>
                 <li><strong>↑ Arrow Up</strong> or <strong>H</strong> → Higher</li>
                 <li><strong>↓ Arrow Down</strong> or <strong>L</strong> → Lower</li>
               </ul>
@@ -388,9 +451,9 @@ const GameBoard = () => {
             <ul>
               <li>Use hints wisely on difficult decisions</li>
               <li>Remember which cards have been played</li>
-              <li>Low cards (2-6) are more likely to go higher</li>
+              <li>Low cards (A-5) are more likely to go higher</li>
               <li>High cards (9-K) are more likely to go lower</li>
-              <li>Middle cards (7-8) are tricky!</li>
+              <li>Middle cards (6-8) are tricky!</li>
             </ul>
           </div>
         </div>
@@ -436,16 +499,17 @@ const GameBoard = () => {
                 <div className="rules-content">
                   <h3>📋 Game Rules:</h3>
                   <ul>
-                    <li><strong>Objective:</strong> Guess all 52 cards correctly!</li>
-                    <li><strong>Select a deck</strong> by clicking on it (glows blue)</li>
-                    <li><strong>Guess:</strong> Will the next card be Higher or Lower?</li>
-                    <li><strong>Correct:</strong> New card becomes the top card ✅</li>
-                    <li><strong>Wrong:</strong> That deck is eliminated ❌</li>
-                    <li><strong>Win:</strong> Guess all 52 cards before losing all decks!</li>
+                      <li>The objective of the game is to guess all the cards correctly.</li>
+                      <li>The selected number of decks will be placed face-up.</li>
+                      <li>The player must choose a deck and guess whether the next drawn card will be higher or lower than the current top card.</li>
+                      <li>If the guess is correct, the new card replaces the top card of that deck.</li>
+                      <li>If the guess is wrong, that deck is eliminated and can no longer be used.</li>
+                      <li>The more decks you keep in play, the higher your chances of winning.</li>
                   </ul>
 
                   <h3>⌨️ Keyboard Shortcuts:</h3>
                   <ul>
+                    <li><strong>1-9, 0</strong> → Select Deck 1-10</li>
                     <li><strong>↑ Arrow Up</strong> or <strong>H</strong> → Higher</li>
                     <li><strong>↓ Arrow Down</strong> or <strong>L</strong> → Lower</li>
                   </ul>
@@ -461,9 +525,9 @@ const GameBoard = () => {
                   <ul>
                     <li>Use hints wisely on difficult decisions</li>
                     <li>Remember which cards have been played</li>
-                    <li>Low cards (2-6) are more likely to go higher</li>
+                    <li>Low cards (A-5) are more likely to go higher</li>
                     <li>High cards (9-K) are more likely to go lower</li>
-                    <li>Middle cards (7-8) are tricky!</li>
+                    <li>Middle cards (6-8) are tricky!</li>
                   </ul>
                 </div>
                 <button className="close-button-modal" onClick={() => setShowRules(false)}>
