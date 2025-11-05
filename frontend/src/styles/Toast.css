@@ -1,0 +1,22 @@
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  animation: fadeSlideIn 0.4s ease-out;
+}
+
+.toast-message {
+  background: #222;
+  color: #fff;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

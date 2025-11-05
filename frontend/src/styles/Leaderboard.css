@@ -1,0 +1,257 @@
+.leaderboard-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 100px 20px 40px 20px;
+}
+
+.leaderboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto 40px auto;
+}
+
+.leaderboard-header h1 {
+  color: white;
+  font-size: 42px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.podium {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto 40px auto;
+}
+
+.podium-card {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.podium-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+}
+
+.podium-card.rank-1 {
+  transform: scale(1.08);
+}
+
+.podium-card.rank-1::before {
+  background: linear-gradient(90deg, #FFD700, #FFA500);
+}
+
+.podium-card.rank-2::before {
+  background: linear-gradient(90deg, #C0C0C0, #A8A8A8);
+}
+
+.podium-card.rank-3::before {
+  background: linear-gradient(90deg, #CD7F32, #B8860B);
+}
+
+.podium-card:hover {
+  transform: scale(1.1);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+.podium-card.rank-1:hover {
+  transform: scale(1.15);
+}
+
+.podium-card.current-user {
+  border: 3px solid #667eea;
+  box-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+}
+
+.podium-rank {
+  font-size: 64px;
+  margin-bottom: 15px;
+}
+
+.podium-username {
+  font-size: 22px;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.podium-score {
+  font-size: 32px;
+  font-weight: bold;
+  color: #667eea;
+  margin-bottom: 5px;
+}
+
+.podium-decks {
+  font-size: 14px;
+  color: #7f8c8d;
+  font-weight: 600;
+}
+
+.leaderboard-table-container {
+  max-width: 1200px;
+  margin: 0 auto 40px auto;
+  background: white;
+  border-radius: 15px;
+  padding: 30px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  overflow-x: auto;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaderboard-table th {
+  background: #f8f9fa;
+  padding: 15px;
+  text-align: left;
+  font-weight: 600;
+  color: #2c3e50;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.leaderboard-table td {
+  padding: 15px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #34495e;
+}
+
+.leaderboard-table tr:hover {
+  background: #f8f9fa;
+}
+
+.leaderboard-table tr.current-user-row {
+  background: rgba(102, 126, 234, 0.1);
+  border-left: 4px solid #667eea;
+}
+
+.leaderboard-table tr.current-user-row:hover {
+  background: rgba(102, 126, 234, 0.15);
+}
+
+.rank-cell {
+  font-weight: bold;
+  font-size: 18px;
+  color: #667eea;
+}
+
+.username-cell {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.you-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.score-cell {
+  font-weight: bold;
+  font-size: 18px;
+  color: #2ecc71;
+}
+
+.date-cell {
+  color: #95a5a6;
+  font-size: 14px;
+}
+
+.no-data {
+  text-align: center;
+  color: white;
+  padding: 60px;
+  font-size: 20px;
+}
+
+.button-group {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.nav-button {
+  background: white;
+  color: #667eea;
+  border: 2px solid white;
+  padding: 15px 40px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nav-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.nav-button.primary {
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  color: white;
+  border-color: transparent;
+}
+
+.nav-button.primary:hover {
+  box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .leaderboard-header {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .leaderboard-header h1 {
+    font-size: 32px;
+  }
+
+  .podium {
+    grid-template-columns: 1fr;
+  }
+
+  .podium-card.rank-1 {
+    transform: scale(1);
+  }
+
+  .podium-card.rank-1:hover {
+    transform: scale(1.05);
+  }
+
+  .username-cell {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .nav-button {
+    width: 100%;
+  }
+}

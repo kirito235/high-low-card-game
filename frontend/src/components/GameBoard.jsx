@@ -4,6 +4,10 @@ import DeckDisplay from './DeckDisplay';
 import gameService from '../services/gameService';
 import Confetti from 'react-confetti';
 import '../styles/GameBoard.css';
+import statsService from '../services/statsService';
+import Toast from "./Toast";
+
+
 
 // Hint Configuration
 const TOTAL_HINTS = 3;
@@ -44,6 +48,8 @@ const GameBoard = () => {
   const [showProbabilities, setShowProbabilities] = useState(false); // ADD THIS
   const [showRules, setShowRules] = useState(false);
   const [isBackendLoading, setIsBackendLoading] = useState(true);
+  const [toastMessage, setToastMessage] = useState(null);
+
 
   useEffect(() => {
     const keepAwake = setInterval(async () => {
@@ -248,33 +254,22 @@ const GameBoard = () => {
       const deckNumber = selectedDeck + 1;
       const newState = await gameService.makeGuess(deckNumber, guess);
 
-      // Extract the drawn card from the backend message
-      // Updated pattern to catch "final card was" or "card was" or "new card was"
+      // Extract drawn card
       const cardMatch = newState.message.match(/(?:final card was|new card was|card was) ([A-K0-9]+[SHDC])/i);
       const drawnCard = cardMatch ? cardMatch[1] : null;
 
-      console.log('=== GUESS DEBUG ===');
-      console.log('Message:', newState.message);
-      console.log('Extracted card:', drawnCard);
-      console.log('Game over:', newState.gameOver);
-      console.log('Won:', newState.won);
-      console.log('===================');
-
       if (drawnCard) {
-        // ALWAYS set the drawn card first
         setLastDrawnCard(drawnCard);
         setIsFlipping(true);
 
-        // Wait for flip animation to complete
         setTimeout(() => {
-          // Update game state
           setGameState(newState);
           const convertedMessage = convertCardNamesInMessage(newState.message);
           setMessage(convertedMessage);
           setSelectedDeck(null);
           setIsFlipping(false);
 
-          // Decrease hint rounds if active
+          // Handle hint countdown
           if (hintsRoundsLeft > 0) {
             const newRounds = hintsRoundsLeft - 1;
             setHintsRoundsLeft(newRounds);
@@ -286,44 +281,49 @@ const GameBoard = () => {
             }
           }
 
-          // Trigger confetti if won
+          // Confetti
           if (newState.gameOver && newState.won) {
-            console.log('🎉 Triggering confetti!');
             setShowConfetti(true);
-
-            // Keep confetti for 10 seconds
-            setTimeout(() => {
-              setShowConfetti(false);
-              console.log('Confetti ended');
-            }, 10000);
+            setTimeout(() => setShowConfetti(false), 7000);
           }
 
-          // Load probabilities only if game continues
           if (!newState.gameOver) {
             loadProbabilities();
           }
 
           setLoading(false);
-        }, 500); // 500ms for smooth animation
+
+        }, 500);
 
       } else {
-        // Fallback if card extraction fails
-        console.warn('⚠️ Could not extract card from message');
+        // Fallback if card not detected
         setGameState(newState);
-        const convertedMessage = convertCardNamesInMessage(newState.message);
-        setMessage(convertedMessage);
+        setMessage(convertCardNamesInMessage(newState.message));
         setSelectedDeck(null);
 
         if (newState.gameOver && newState.won) {
-          console.log('🎉 Triggering confetti (fallback)!');
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 5000);
         }
 
-        setLoading(false);
-
         if (!newState.gameOver) {
           loadProbabilities();
+        }
+
+        setLoading(false);
+      }
+
+      // ✅ SAVE GAME RESULT HERE (outside of animation timeout)
+      if (newState.gameOver) {
+        try {
+          await statsService.saveGameResult(
+            newState.score,
+            numDecks,
+            newState.won
+          );
+          setToastMessage("🎯 Game Saved to Stats!");
+        } catch (err) {
+          setToastMessage("⚠️ Could not save stats!");
         }
       }
 
@@ -334,6 +334,7 @@ const GameBoard = () => {
       setLoading(false);
     }
   };
+
 
   const resetGame = async () => {
     setLoading(true);

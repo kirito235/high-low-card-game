@@ -1,12 +1,17 @@
 import axios from 'axios';
 import authService from './authService';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081/api/game';
+const API_BASE_URL = process.env.REACT_APP_API_URL
+  ? `${process.env.REACT_APP_API_URL}/api/game`
+  : 'http://localhost:8081/api/game';
+
+console.log('🔗 Game API URL:', API_BASE_URL);
 
 const gameService = {
   // Start a new game
   startGame: async (numDecks) => {
     try {
+      console.log('🎮 Starting game with', numDecks, 'decks');
       const response = await axios.post(
         `${API_BASE_URL}/start`,
         { numDecks },
@@ -14,7 +19,8 @@ const gameService = {
       );
       return response.data;
     } catch (error) {
-      console.error('Error starting game:', error);
+      console.error('❌ Error starting game:', error);
+      console.error('Error details:', error.response?.data);
       throw error;
     }
   },
@@ -29,7 +35,7 @@ const gameService = {
       );
       return response.data;
     } catch (error) {
-      console.error('Error making guess:', error);
+      console.error('❌ Error making guess:', error);
       throw error;
     }
   },
@@ -42,7 +48,7 @@ const gameService = {
       });
       return response.data;
     } catch (error) {
-      console.error('Error getting game state:', error);
+      console.error('❌ Error getting game state:', error);
       throw error;
     }
   },
@@ -55,7 +61,7 @@ const gameService = {
       });
       return response.data;
     } catch (error) {
-      console.error('Error getting probabilities:', error);
+      console.error('❌ Error getting probabilities:', error);
       throw error;
     }
   },
@@ -69,7 +75,7 @@ const gameService = {
         { headers: authService.getAuthHeader() }
       );
     } catch (error) {
-      console.error('Error resetting game:', error);
+      console.error('❌ Error resetting game:', error);
       throw error;
     }
   },
@@ -78,9 +84,10 @@ const gameService = {
   healthCheck: async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/health`);
+      console.log('✅ Backend health check passed:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error checking health:', error);
+      console.error('❌ Backend health check failed:', error);
       throw error;
     }
   }
