@@ -8,6 +8,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.cardgame.backend.model.GameHistory;
+import com.cardgame.backend.model.User;
+import com.cardgame.backend.repository.GameHistoryRepository;
+import com.cardgame.backend.repository.UserRepository;
+import com.cardgame.backend.security.UserDetailsImpl;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +27,12 @@ public class GameController {
 
     @Autowired
     private GameService gameService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private GameHistoryRepository gameHistoryRepository;
 
     /**
      * Start a new game
@@ -122,5 +135,38 @@ public class GameController {
         response.put("status", "OK");
         response.put("message", "Card Game API is running");
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Save game result when game ends
+     * POST /api/game/save
+     * Body: { "score": 52, "numDecks": 6, "won": true }
+     */
+    @PostMapping("/save")
+    public ResponseEntity<?> saveGameResult(@RequestBody Map<String, Object> gameResult) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            User user = userRepository.findByUsername(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            int score = (Integer) gameResult.get("score");
+            int numDecks = (Integer) gameResult.get("numDecks");
+            boolean won = (Boolean) gameResult.get("won");
+
+            GameHistory history = new GameHistory(user, score, numDecks, won);
+            gameHistoryRepository.save(history);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Game saved successfully");
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }
