@@ -1,9 +1,11 @@
 import axios from 'axios';
 import authService from './authService';
 
+axios.defaults.withCredentials = true;
+
 const API_BASE_URL = process.env.REACT_APP_API_URL
   ? `${process.env.REACT_APP_API_URL}/api/game`
-  : 'http://localhost:8081/api/game';
+  : 'http://localhost:8080/api/game';
 
 console.log('🔗 Game API URL:', API_BASE_URL);
 

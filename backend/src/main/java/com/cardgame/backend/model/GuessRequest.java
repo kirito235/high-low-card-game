@@ -11,6 +11,8 @@ public class GuessRequest {
         this.guess = guess;
     }
 
+
+
     public int getDeckNumber() {
         return deckNumber;
     }

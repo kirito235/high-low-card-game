@@ -219,6 +219,7 @@ const GameBoard = () => {
       setHintsLeft(TOTAL_HINTS);
       setHintsRoundsLeft(0);
       setShowProbabilities(false);
+      await new Promise(resolve => setTimeout(resolve, 250));
       await loadProbabilities();
     } catch (error) {
       setMessage('Error starting game. Please wait 30 seconds and try again.');
