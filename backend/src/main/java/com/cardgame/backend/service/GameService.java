@@ -3,10 +3,12 @@ package com.cardgame.backend.service;
 import com.cardgame.backend.model.GameState;
 import com.cardgame.backend.model.ProbabilityInfo;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.annotation.SessionScope;
 
 import java.util.*;
 
 @Service
+@SessionScope // ✅ CRITICAL: Each user gets their own instance
 public class GameService {
 
     private static final int TOTAL_CARDS = 52;
@@ -14,6 +16,21 @@ public class GameService {
 
     public GameService() {
         this.currentGame = null;
+    }
+
+    /**
+     * Calculate score multiplier based on number of decks
+     * Fewer decks = Higher difficulty = Higher multiplier
+     */
+    private double getScoreMultiplier(int numDecks) {
+        switch (numDecks) {
+            case 6: return 2.5;  // Hardest
+            case 7: return 2.0;
+            case 8: return 1.5;
+            case 9: return 1.2;
+            case 10: return 1.0; // Easiest
+            default: return 1.0;
+        }
     }
 
     /**
@@ -113,61 +130,64 @@ public class GameService {
         // Draw new card
         String newCard = drawRandomCard(currentGame.getRemainingCards());
 
-        // Calculate score FIRST
+        // Calculate base score
         int remainingCardsCount = getDeckSize(currentGame.getRemainingCards());
-        int score = TOTAL_CARDS - remainingCardsCount;
+        int baseScore = TOTAL_CARDS - remainingCardsCount;
 
-        // Check if guess is correct BEFORE checking victory
+        // Apply multiplier
+        double multiplier = getScoreMultiplier(currentGame.getNumDecks());
+        int finalScore = (int) Math.round(baseScore * multiplier);
+
+        // Check if guess is correct
         boolean correct = checkGuess(topCard, newCard, guess);
 
         // Check if all 52 cards have been drawn (player wins)
-        if (score >= TOTAL_CARDS || remainingCardsCount == 0) {
-            currentGame.setScore(TOTAL_CARDS);
+        if (baseScore >= TOTAL_CARDS || remainingCardsCount == 0) {
+            currentGame.setScore(finalScore);
             currentGame.setGameOver(true);
             currentGame.setWon(true);
 
-            // IMPORTANT: Include the last card in the message
             if (correct) {
                 currentGame.getDeckValues().set(deckNumber - 1, newCard);
-                currentGame.setMessage("🎉 Congratulations! You won! The final card was " + newCard + ". You guessed all 52 cards! 🎉");
+                currentGame.setMessage("🎉 Congratulations! You won! The final card was " + newCard +
+                        ". Final score: " + finalScore + " (Multiplier: " + multiplier + "x) 🎉");
             } else {
                 currentGame.getDeckValues().set(deckNumber - 1, "XX");
-                currentGame.setMessage("🎉 Congratulations! You won! The final card was " + newCard + ". You guessed all 52 cards! 🎉");
+                currentGame.setMessage("🎉 Congratulations! You won! The final card was " + newCard +
+                        ". Final score: " + finalScore + " (Multiplier: " + multiplier + "x) 🎉");
             }
 
             return currentGame;
         }
 
-        // Check if deck is empty (shouldn't happen, but safety check)
+        // Check if deck is empty
         if (newCard == null) {
-            currentGame.setScore(score);
+            currentGame.setScore(finalScore);
             currentGame.setGameOver(true);
             currentGame.setWon(true);
-            currentGame.setMessage("🎉 Congratulations! You won! All cards have been guessed! 🎉");
+            currentGame.setMessage("🎉 Congratulations! You won! All cards have been guessed! Final score: " + finalScore);
             return currentGame;
         }
 
-        // Calculate score
-        currentGame.setScore(score);
+        // Update score
+        currentGame.setScore(finalScore);
 
         if (correct) {
-            // Update the deck with new card
             currentGame.getDeckValues().set(deckNumber - 1, newCard);
-            currentGame.setMessage("Correct! The new card was " + newCard + ". Your score: " + score);
+            currentGame.setMessage("Correct! The new card was " + newCard + ". Your score: " + finalScore);
         } else {
-            // Eliminate the deck
             currentGame.getDeckValues().set(deckNumber - 1, "XX");
-            currentGame.setMessage("Wrong! The card was " + newCard + ". Deck " + deckNumber + " eliminated. Your score: " + score);
+            currentGame.setMessage("Wrong! The card was " + newCard + ". Deck " + deckNumber + " eliminated. Your score: " + finalScore);
         }
 
-        // Check if all decks are eliminated (game over)
+        // Check if all decks are eliminated
         boolean allEliminated = currentGame.getDeckValues().stream()
                 .allMatch(val -> val.equalsIgnoreCase("XX"));
 
         if (allEliminated) {
             currentGame.setGameOver(true);
             currentGame.setWon(false);
-            currentGame.setMessage(currentGame.getMessage() + " Game Over! All decks eliminated. Final score: " + score);
+            currentGame.setMessage(currentGame.getMessage() + " Game Over! All decks eliminated. Final score: " + finalScore);
         }
 
         return currentGame;
@@ -180,7 +200,6 @@ public class GameService {
         int topValue = getCardValue(topCard);
         int newValue = getCardValue(newCard);
 
-        // Equal cards are treated as wrong
         if (topValue == newValue) {
             return true;
         }

@@ -48,31 +48,36 @@ public class StatsController {
             long totalGames = gameHistoryRepository.countByUser(user);
             long gamesWon = gameHistoryRepository.countByUserAndWonTrue(user);
             double winRate = totalGames > 0 ? (double) gamesWon / totalGames * 100 : 0.0;
-            Integer bestScore = gameHistoryRepository.findMaxScoreByUser(user);
-            Double averageScore = gameHistoryRepository.findAvgScoreByUser(user);
-            Long userRank = gameHistoryRepository.getUserRank(user);
 
-            // Adjust rank (0 means #1)
-            userRank = userRank != null ? userRank + 1 : null;
+            // ✅ Use bestScore from User table
+            Integer bestScore = user.getBestScore();
+
+            Double averageScore = gameHistoryRepository.findAvgScoreByUser(user);
+
+            // ✅ Calculate correct rank (users with higher scores)
+            Long userRank = userRepository.getUserRankByBestScore(user.getBestScore());
+            userRank = userRank != null ? userRank + 1 : null; // +1 because rank starts at 1
 
             UserStatsResponse stats = new UserStatsResponse(
                     user.getId(),
                     user.getUsername(),
                     totalGames,
                     gamesWon,
-                    Math.round(winRate * 10.0) / 10.0, // Round to 1 decimal
+                    Math.round(winRate * 10.0) / 10.0,
                     bestScore != null ? bestScore : 0,
                     averageScore != null ? Math.round(averageScore * 10.0) / 10.0 : 0.0,
-                    userRank
+                    userRank,
+                    user.getCurrentWinStreak(), // ✅ NEW
+                    user.getLongestWinStreak()  // ✅ NEW
             );
 
             return ResponseEntity.ok(stats);
 
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
     /**
      * Get current user's game history
      * GET /api/stats/history
@@ -135,7 +140,9 @@ public class StatsController {
                     Math.round(winRate * 10.0) / 10.0,
                     bestScore != null ? bestScore : 0,
                     averageScore != null ? Math.round(averageScore * 10.0) / 10.0 : 0.0,
-                    userRank
+                    userRank,
+                    user.getCurrentWinStreak(), // ✅ NEW
+                    user.getLongestWinStreak()  // ✅ NEW
             );
 
             return ResponseEntity.ok(stats);

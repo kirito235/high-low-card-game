@@ -75,45 +75,58 @@ const Stats = () => {
       </div>
 
       {stats && (
-        <div className="stats-grid">
-          <div className="stat-card highlight">
-            <div className="stat-icon">🏆</div>
-            <div className="stat-value">{stats.bestScore}</div>
-            <div className="stat-label">Best Score</div>
-          </div>
+              <div className="stats-grid">
+                <div className="stat-card highlight">
+                  <div className="stat-icon">🏆</div>
+                  <div className="stat-value">{stats.bestScore}</div>
+                  <div className="stat-label">Best Score</div>
+                </div>
 
-          <div className="stat-card">
-            <div className="stat-icon">🎮</div>
-            <div className="stat-value">{stats.totalGames}</div>
-            <div className="stat-label">Total Games</div>
-          </div>
+                <div className="stat-card">
+                  <div className="stat-icon">🎮</div>
+                  <div className="stat-value">{stats.totalGames}</div>
+                  <div className="stat-label">Total Games</div>
+                </div>
 
-          <div className="stat-card">
-            <div className="stat-icon">✅</div>
-            <div className="stat-value">{stats.gamesWon}</div>
-            <div className="stat-label">Games Won</div>
-          </div>
+                <div className="stat-card">
+                  <div className="stat-icon">✅</div>
+                  <div className="stat-value">{stats.gamesWon}</div>
+                  <div className="stat-label">Games Won</div>
+                </div>
 
-          <div className="stat-card">
-            <div className="stat-icon">📈</div>
-            <div className="stat-value">{stats.winRate.toFixed(1)}%</div>
-            <div className="stat-label">Win Rate</div>
-          </div>
+                <div className="stat-card">
+                  <div className="stat-icon">📈</div>
+                  <div className="stat-value">{stats.winRate.toFixed(1)}%</div>
+                  <div className="stat-label">Win Rate</div>
+                </div>
 
-          <div className="stat-card">
-            <div className="stat-icon">⭐</div>
-            <div className="stat-value">{stats.averageScore.toFixed(1)}</div>
-            <div className="stat-label">Avg Score</div>
-          </div>
+                <div className="stat-card">
+                  <div className="stat-icon">⭐</div>
+                  <div className="stat-value">{stats.averageScore.toFixed(1)}</div>
+                  <div className="stat-label">Avg Score</div>
+                </div>
 
-          <div className="stat-card">
-            <div className="stat-icon">🥇</div>
-            <div className="stat-value">#{stats.userRank || 'N/A'}</div>
-            <div className="stat-label">Global Rank</div>
-          </div>
-        </div>
-      )}
+                <div className="stat-card">
+                  <div className="stat-icon">🥇</div>
+                  <div className="stat-value">#{stats.userRank || 'N/A'}</div>
+                  <div className="stat-label">Global Rank</div>
+                </div>
 
+                {/* ✅ NEW: Current Win Streak */}
+                <div className="stat-card streak">
+                  <div className="stat-icon">🔥</div>
+                  <div className="stat-value">{stats.currentWinStreak || 0}</div>
+                  <div className="stat-label">Win Streak</div>
+                </div>
+
+                {/* ✅ NEW: Longest Win Streak */}
+                <div className="stat-card">
+                  <div className="stat-icon">💪</div>
+                  <div className="stat-value">{stats.longestWinStreak || 0}</div>
+                  <div className="stat-label">Best Streak</div>
+                </div>
+              </div>
+            )}
       <div className="history-section">
         <h2>📜 Game History</h2>
         {history.length === 0 ? (

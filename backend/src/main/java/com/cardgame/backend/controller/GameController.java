@@ -140,7 +140,7 @@ public class GameController {
     /**
      * Save game result when game ends
      * POST /api/game/save
-     * Body: { "score": 52, "numDecks": 6, "won": true }
+     * Body: { "score": 130, "numDecks": 6, "won": true }
      */
     @PostMapping("/save")
     public ResponseEntity<?> saveGameResult(@RequestBody Map<String, Object> gameResult) {
@@ -158,14 +158,36 @@ public class GameController {
             int numDecks = (Integer) gameResult.get("numDecks");
             boolean won = (Boolean) gameResult.get("won");
 
+            // ✅ Save to game history (keep full history)
             GameHistory history = new GameHistory(user, score, numDecks, won);
             gameHistoryRepository.save(history);
+
+            // ✅ Update win streak
+            if (won) {
+                user.setCurrentWinStreak(user.getCurrentWinStreak() + 1);
+
+                // Update longest streak if current exceeds it
+                if (user.getCurrentWinStreak() > user.getLongestWinStreak()) {
+                    user.setLongestWinStreak(user.getCurrentWinStreak());
+                }
+            } else {
+                user.setCurrentWinStreak(0); // Reset streak on loss
+            }
+
+            // ✅ Update best score if this score is better
+            if (won && score > user.getBestScore()) {
+                user.setBestScore(score);
+                user.setBestScoreDecks(numDecks);
+            }
+
+            userRepository.save(user);
 
             Map<String, String> response = new HashMap<>();
             response.put("message", "Game saved successfully");
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

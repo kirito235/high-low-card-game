@@ -24,17 +24,33 @@ public class User {
     @Column(unique = true)
     private String email;
 
-    private String password; // Null for OAuth users
+    private String password;
 
     @Enumerated(EnumType.STRING)
     private AuthProvider provider = AuthProvider.LOCAL;
 
-    private String providerId; // Google ID, etc.
+    private String providerId;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     private boolean isGuest = false;
+
+    // ✅ NEW: Best score for leaderboard (instead of multiple entries)
+    @Column(name = "best_score")
+    private Integer bestScore = 0;
+
+    // ✅ NEW: Number of decks used for best score
+    @Column(name = "best_score_decks")
+    private Integer bestScoreDecks = 0;
+
+    // ✅ NEW: Win streak counter
+    @Column(name = "current_win_streak")
+    private Integer currentWinStreak = 0;
+
+    // ✅ NEW: Longest win streak ever
+    @Column(name = "longest_win_streak")
+    private Integer longestWinStreak = 0;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<GameHistory> gameHistories = new HashSet<>();
@@ -114,6 +130,38 @@ public class User {
 
     public void setGuest(boolean guest) {
         isGuest = guest;
+    }
+
+    public Integer getBestScore() {
+        return bestScore;
+    }
+
+    public void setBestScore(Integer bestScore) {
+        this.bestScore = bestScore;
+    }
+
+    public Integer getBestScoreDecks() {
+        return bestScoreDecks;
+    }
+
+    public void setBestScoreDecks(Integer bestScoreDecks) {
+        this.bestScoreDecks = bestScoreDecks;
+    }
+
+    public Integer getCurrentWinStreak() {
+        return currentWinStreak;
+    }
+
+    public void setCurrentWinStreak(Integer currentWinStreak) {
+        this.currentWinStreak = currentWinStreak;
+    }
+
+    public Integer getLongestWinStreak() {
+        return longestWinStreak;
+    }
+
+    public void setLongestWinStreak(Integer longestWinStreak) {
+        this.longestWinStreak = longestWinStreak;
     }
 
     public Set<GameHistory> getGameHistories() {

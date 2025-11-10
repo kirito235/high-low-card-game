@@ -1,8 +1,8 @@
 package com.cardgame.backend.controller;
 
 import com.cardgame.backend.dto.LeaderboardEntry;
-import com.cardgame.backend.model.GameHistory;
-import com.cardgame.backend.repository.GameHistoryRepository;
+import com.cardgame.backend.model.User;
+import com.cardgame.backend.repository.UserRepository;
 import com.cardgame.backend.security.UserDetailsImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +19,10 @@ import java.util.List;
 public class LeaderboardController {
 
     @Autowired
-    private GameHistoryRepository gameHistoryRepository;
+    private UserRepository userRepository;
 
     /**
-     * Get global leaderboard - top 100 scores
+     * Get global leaderboard - top players by best score
      * GET /api/leaderboard
      */
     @GetMapping
@@ -37,26 +37,27 @@ public class LeaderboardController {
                 currentUsername = userDetails.getUsername();
             }
 
-            List<GameHistory> topGames = gameHistoryRepository.findTopScores();
+            // ✅ Get users sorted by best score (descending)
+            List<User> topUsers = userRepository.findAllByBestScoreGreaterThanOrderByBestScoreDesc(0);
 
             // Limit results
-            if (topGames.size() > limit) {
-                topGames = topGames.subList(0, limit);
+            if (topUsers.size() > limit) {
+                topUsers = topUsers.subList(0, limit);
             }
 
             List<LeaderboardEntry> leaderboard = new ArrayList<>();
             long rank = 1;
 
-            for (GameHistory game : topGames) {
+            for (User user : topUsers) {
                 boolean isCurrentUser = currentUsername != null
-                        && game.getUser().getUsername().equals(currentUsername);
+                        && user.getUsername().equals(currentUsername);
 
                 LeaderboardEntry entry = new LeaderboardEntry(
                         rank,
-                        game.getUser().getUsername(),
-                        game.getScore(),
-                        game.getNumDecks(),
-                        game.getPlayedAt(),
+                        user.getUsername(),
+                        user.getBestScore(),
+                        user.getBestScoreDecks(),
+                        user.getCreatedAt(), // Use account creation date
                         isCurrentUser
                 );
 
@@ -67,6 +68,7 @@ public class LeaderboardController {
             return ResponseEntity.ok(leaderboard);
 
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(500).build();
         }
     }

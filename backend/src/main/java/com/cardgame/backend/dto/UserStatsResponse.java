@@ -10,11 +10,14 @@ public class UserStatsResponse {
     private Integer bestScore;
     private Double averageScore;
     private Long userRank;
+    private Integer currentWinStreak; // ✅ NEW
+    private Integer longestWinStreak; // ✅ NEW
 
     public UserStatsResponse() {}
 
     public UserStatsResponse(Long userId, String username, long totalGames, long gamesWon,
-                             double winRate, Integer bestScore, Double averageScore, Long userRank) {
+                             double winRate, Integer bestScore, Double averageScore, Long userRank,
+                             Integer currentWinStreak, Integer longestWinStreak) {
         this.userId = userId;
         this.username = username;
         this.totalGames = totalGames;
@@ -23,6 +26,8 @@ public class UserStatsResponse {
         this.bestScore = bestScore;
         this.averageScore = averageScore;
         this.userRank = userRank;
+        this.currentWinStreak = currentWinStreak;
+        this.longestWinStreak = longestWinStreak;
     }
 
     // Getters and Setters
@@ -88,5 +93,21 @@ public class UserStatsResponse {
 
     public void setUserRank(Long userRank) {
         this.userRank = userRank;
+    }
+
+    public Integer getCurrentWinStreak() {
+        return currentWinStreak;
+    }
+
+    public void setCurrentWinStreak(Integer currentWinStreak) {
+        this.currentWinStreak = currentWinStreak;
+    }
+
+    public Integer getLongestWinStreak() {
+        return longestWinStreak;
+    }
+
+    public void setLongestWinStreak(Integer longestWinStreak) {
+        this.longestWinStreak = longestWinStreak;
     }
 }
