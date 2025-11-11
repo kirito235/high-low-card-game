@@ -52,19 +52,15 @@ public class StatsController {
             User user = userRepository.findByUsername(userDetails.getUsername())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // Calculate statistics
             long totalGames = gameHistoryRepository.countByUser(user);
             long gamesWon = gameHistoryRepository.countByUserAndWonTrue(user);
             double winRate = totalGames > 0 ? (double) gamesWon / totalGames * 100 : 0.0;
 
-            // ✅ Use bestScore from User table
-            Integer bestScore = user.getBestScore();
-
+            Integer bestScore = user.getBestScore() != null ? user.getBestScore() : 0;
             Double averageScore = gameHistoryRepository.findAvgScoreByUser(user);
 
-            // ✅ Calculate correct rank (users with higher scores)
-            Long userRank = userRepository.getUserRankByBestScore(user.getBestScore());
-            userRank = userRank != null ? userRank + 1 : null; // +1 because rank starts at 1
+            Long userRank = userRepository.getUserRankByBestScore(bestScore);
+            userRank = (userRank != null) ? userRank + 1 : null;
 
             UserStatsResponse stats = new UserStatsResponse(
                     user.getId(),
@@ -72,11 +68,11 @@ public class StatsController {
                     totalGames,
                     gamesWon,
                     Math.round(winRate * 10.0) / 10.0,
-                    bestScore != null ? bestScore : 0,
+                    bestScore,
                     averageScore != null ? Math.round(averageScore * 10.0) / 10.0 : 0.0,
                     userRank,
-                    user.getCurrentWinStreak(), // ✅ NEW
-                    user.getLongestWinStreak()  // ✅ NEW
+                    user.getCurrentWinStreak() != null ? user.getCurrentWinStreak() : 0,
+                    user.getLongestWinStreak() != null ? user.getLongestWinStreak() : 0
             );
 
             return ResponseEntity.ok(stats);
@@ -86,6 +82,7 @@ public class StatsController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
     /**
      * Get current user's game history
      * GET /api/stats/history
@@ -135,10 +132,21 @@ public class StatsController {
             long totalGames = gameHistoryRepository.countByUser(user);
             long gamesWon = gameHistoryRepository.countByUserAndWonTrue(user);
             double winRate = totalGames > 0 ? (double) gamesWon / totalGames * 100 : 0.0;
-            Integer bestScore = gameHistoryRepository.findMaxScoreByUser(user);
+
+            // ✅ Safe default values
+            Integer bestScore = user.getBestScore() != null ? user.getBestScore() : 0;
+            Integer bestScoreDecks = user.getBestScoreDecks() != null ? user.getBestScoreDecks() : 0;
+
             Double averageScore = gameHistoryRepository.findAvgScoreByUser(user);
-            Long userRank = gameHistoryRepository.getUserRank(user);
-            userRank = userRank != null ? userRank + 1 : null;
+            averageScore = averageScore != null ? Math.round(averageScore * 10.0) / 10.0 : 0.0;
+
+            // ✅ Safe rank calculation
+            Long userRank = userRepository.getUserRankByBestScore(bestScore);
+            userRank = (userRank != null) ? userRank + 1 : null;
+
+            // ✅ Safe streak values
+            Integer currentStreak = user.getCurrentWinStreak() != null ? user.getCurrentWinStreak() : 0;
+            Integer longestStreak = user.getLongestWinStreak() != null ? user.getLongestWinStreak() : 0;
 
             UserStatsResponse stats = new UserStatsResponse(
                     user.getId(),
@@ -146,17 +154,19 @@ public class StatsController {
                     totalGames,
                     gamesWon,
                     Math.round(winRate * 10.0) / 10.0,
-                    bestScore != null ? bestScore : 0,
-                    averageScore != null ? Math.round(averageScore * 10.0) / 10.0 : 0.0,
+                    bestScore,
+                    averageScore,
                     userRank,
-                    user.getCurrentWinStreak(), // ✅ NEW
-                    user.getLongestWinStreak()  // ✅ NEW
+                    currentStreak,
+                    longestStreak
             );
 
             return ResponseEntity.ok(stats);
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 }
