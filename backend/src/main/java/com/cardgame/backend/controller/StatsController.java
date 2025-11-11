@@ -17,9 +17,17 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/stats")
+//@CrossOrigin(origins = "*", maxAge = 3600)
+@CrossOrigin(
+        origins = {
+                "http://localhost:3000",
+                "https://higherlowercardgame.onrender.com"
+        },
+        allowCredentials = "true"
+)
+
 public class StatsController {
 
     @Autowired
