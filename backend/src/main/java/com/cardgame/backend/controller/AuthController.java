@@ -21,7 +21,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
+@CrossOrigin(
+        origins = { "http://localhost:3000", "https://higherlowercardgame.onrender.com" },
+        allowCredentials = "true"
+)
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {

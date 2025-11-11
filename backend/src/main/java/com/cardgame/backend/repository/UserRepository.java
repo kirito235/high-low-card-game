@@ -21,10 +21,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByProviderAndProviderId(String provider, String providerId);
 
-    // ✅ NEW: Get users with scores > 0, sorted by best score (for leaderboard)
+    // ✅ OLD: Only users with score > 0
     List<User> findAllByBestScoreGreaterThanOrderByBestScoreDesc(int score);
 
-    // ✅ NEW: Get user's rank by counting users with higher scores
-    @Query("SELECT COUNT(u) FROM User u WHERE u.bestScore > :bestScore")
+    // ✅ NEW: Include users with score >= 0, exclude guests
+    List<User> findAllByBestScoreGreaterThanEqualAndIsGuestFalseOrderByBestScoreDesc(int score);
+
+    // ✅ UPDATED: Get user's rank by counting users with higher scores
+    @Query("SELECT COUNT(u) FROM User u WHERE u.bestScore > :bestScore AND u.isGuest = false")
     Long getUserRankByBestScore(int bestScore);
 }

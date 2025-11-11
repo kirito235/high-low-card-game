@@ -18,6 +18,24 @@
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
+.back-button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid white;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background: white;
+  color: #667eea;
+  transform: translateY(-2px);
+}
+
 .podium {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -92,12 +110,12 @@
   font-size: 32px;
   font-weight: bold;
   color: #667eea;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
 }
 
-.podium-decks {
-  font-size: 14px;
-  color: #7f8c8d;
+.podium-streak {
+  font-size: 18px;
+  color: #e74c3c;
   font-weight: 600;
 }
 
@@ -148,6 +166,7 @@
   font-weight: bold;
   font-size: 18px;
   color: #667eea;
+  width: 80px;
 }
 
 .username-cell {
@@ -172,9 +191,19 @@
   color: #2ecc71;
 }
 
-.date-cell {
-  color: #95a5a6;
+.streak-cell {
+  text-align: center;
+}
+
+.streak-badge {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
   font-size: 14px;
+  font-weight: bold;
+  display: inline-block;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
 }
 
 .no-data {
@@ -219,6 +248,34 @@
   box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
 }
 
+.loading-message {
+  text-align: center;
+  color: white;
+  padding: 60px;
+}
+
+.spinner {
+  font-size: 48px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.error-message {
+  text-align: center;
+  color: white;
+  background: rgba(231, 76, 60, 0.2);
+  padding: 30px;
+  border-radius: 15px;
+  margin: 40px auto;
+  max-width: 600px;
+  border: 2px solid rgba(231, 76, 60, 0.5);
+  font-size: 18px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .leaderboard-header {
@@ -253,5 +310,24 @@
 
   .nav-button {
     width: 100%;
+  }
+
+  .leaderboard-table th,
+  .leaderboard-table td {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .rank-cell {
+    font-size: 16px;
+  }
+
+  .score-cell {
+    font-size: 16px;
+  }
+
+  .streak-badge {
+    font-size: 12px;
+    padding: 4px 10px;
   }
 }

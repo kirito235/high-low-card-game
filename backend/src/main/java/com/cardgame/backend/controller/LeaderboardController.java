@@ -13,7 +13,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
+@CrossOrigin(
+        origins = { "http://localhost:3000", "https://higherlowercardgame.onrender.com" },
+        allowCredentials = "true"
+)
 @RestController
 @RequestMapping("/api/leaderboard")
 public class LeaderboardController {
@@ -22,8 +25,7 @@ public class LeaderboardController {
     private UserRepository userRepository;
 
     /**
-     * Get global leaderboard - top players by best score
-     * GET /api/leaderboard
+     * ✅ UPDATED: Get global leaderboard with best score and longest streak
      */
     @GetMapping
     public ResponseEntity<?> getLeaderboard(@RequestParam(defaultValue = "100") int limit) {
@@ -37,8 +39,8 @@ public class LeaderboardController {
                 currentUsername = userDetails.getUsername();
             }
 
-            // ✅ Get users sorted by best score (descending)
-            List<User> topUsers = userRepository.findAllByBestScoreGreaterThanOrderByBestScoreDesc(0);
+            // Get all non-guest users sorted by best score
+            List<User> topUsers = userRepository.findAllByBestScoreGreaterThanEqualAndIsGuestFalseOrderByBestScoreDesc(0);
 
             // Limit results
             if (topUsers.size() > limit) {
@@ -52,12 +54,12 @@ public class LeaderboardController {
                 boolean isCurrentUser = currentUsername != null
                         && user.getUsername().equals(currentUsername);
 
+                // ✅ UPDATED: Include score and longest streak instead of decks and date
                 LeaderboardEntry entry = new LeaderboardEntry(
                         rank,
                         user.getUsername(),
                         user.getBestScore(),
-                        user.getBestScoreDecks(),
-                        user.getCreatedAt(), // Use account creation date
+                        user.getLongestWinStreak() != null ? user.getLongestWinStreak() : 0,
                         isCurrentUser
                 );
 
@@ -73,10 +75,6 @@ public class LeaderboardController {
         }
     }
 
-    /**
-     * Get top 10 for quick display
-     * GET /api/leaderboard/top10
-     */
     @GetMapping("/top10")
     public ResponseEntity<?> getTop10() {
         return getLeaderboard(10);

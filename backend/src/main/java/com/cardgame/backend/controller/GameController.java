@@ -21,12 +21,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/game")
-//@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 @CrossOrigin(
         origins = { "http://localhost:3000", "https://higherlowercardgame.onrender.com" },
         allowCredentials = "true"
 )
-
 public class GameController {
 
     @Autowired
@@ -38,11 +36,6 @@ public class GameController {
     @Autowired
     private GameHistoryRepository gameHistoryRepository;
 
-    /**
-     * Start a new game
-     * POST /api/game/start
-     * Body: { "numDecks": 6 }
-     */
     @PostMapping("/start")
     public ResponseEntity<GameState> startGame(@RequestBody Map<String, Integer> request) {
         try {
@@ -54,11 +47,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Make a guess
-     * POST /api/game/guess
-     * Body: { "deckNumber": 1, "guess": "h" }
-     */
     @PostMapping("/guess")
     public ResponseEntity<GameState> makeGuess(@RequestBody GuessRequest request) {
         try {
@@ -72,10 +60,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Get current game state
-     * GET /api/game/state
-     */
     @GetMapping("/state")
     public ResponseEntity<GameState> getGameState() {
         GameState gameState = gameService.getCurrentGame();
@@ -85,10 +69,6 @@ public class GameController {
         return ResponseEntity.ok(gameState);
     }
 
-    /**
-     * Get probabilities for a specific deck
-     * GET /api/game/probability/{deckIndex}
-     */
     @GetMapping("/probability/{deckIndex}")
     public ResponseEntity<ProbabilityInfo> getProbability(@PathVariable int deckIndex) {
         try {
@@ -99,10 +79,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Get probabilities for all decks
-     * GET /api/game/probabilities
-     */
     @GetMapping("/probabilities")
     public ResponseEntity<Map<Integer, ProbabilityInfo>> getAllProbabilities() {
         GameState gameState = gameService.getCurrentGame();
@@ -119,20 +95,12 @@ public class GameController {
         return ResponseEntity.ok(probabilities);
     }
 
-    /**
-     * Reset/End current game
-     * POST /api/game/reset
-     */
     @PostMapping("/reset")
     public ResponseEntity<Void> resetGame() {
         gameService.resetGame();
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * Health check endpoint
-     * GET /api/game/health
-     */
     @GetMapping("/health")
     public ResponseEntity<Map<String, String>> healthCheck() {
         Map<String, String> response = new HashMap<>();
@@ -142,9 +110,8 @@ public class GameController {
     }
 
     /**
-     * Save game result when game ends
-     * POST /api/game/save
-     * Body: { "score": 130, "numDecks": 6, "won": true }
+     * ✅ FIXED: Save game result - ALWAYS updates points (win or loss)
+     * Best score is updated regardless of win/loss if current score is higher
      */
     @PostMapping("/save")
     public ResponseEntity<?> saveGameResult(@RequestBody Map<String, Object> gameResult) {
@@ -166,7 +133,11 @@ public class GameController {
             GameHistory history = new GameHistory(user, score, numDecks, won);
             gameHistoryRepository.save(history);
 
-            // ✅ Update win streak
+            // ✅ ALWAYS add current game score to total points (win or loss)
+            int currentBest = user.getBestScore() != null ? user.getBestScore() : 0;
+            user.setBestScore(currentBest + score);
+
+            // ✅ Update win streak (only for wins)
             if (won) {
                 user.setCurrentWinStreak(user.getCurrentWinStreak() + 1);
 
@@ -174,14 +145,18 @@ public class GameController {
                 if (user.getCurrentWinStreak() > user.getLongestWinStreak()) {
                     user.setLongestWinStreak(user.getCurrentWinStreak());
                 }
+
+                // Update deck count for wins
+                if (currentBest == 0) {
+                    user.setBestScoreDecks(numDecks);
+                }
             } else {
                 user.setCurrentWinStreak(0); // Reset streak on loss
-            }
 
-            // ✅ Update best score if this score is better
-            if (won && score > user.getBestScore()) {
-                user.setBestScore(score);
-                user.setBestScoreDecks(numDecks);
+                // ✅ Update deck count even on loss if first game or better score
+                if (currentBest == 0 || score > (currentBest - score)) {
+                    user.setBestScoreDecks(numDecks);
+                }
             }
 
             userRepository.save(user);

@@ -6,20 +6,17 @@ public class LeaderboardEntry {
 
     private Long rank;
     private String username;
-    private int score;
-    private int numDecks;
-    private LocalDateTime playedAt;
+    private int score; // Total accumulated score
+    private int longestStreak; // ✅ NEW: Highest win streak
     private boolean isCurrentUser;
 
     public LeaderboardEntry() {}
 
-    public LeaderboardEntry(Long rank, String username, int score, int numDecks,
-                            LocalDateTime playedAt, boolean isCurrentUser) {
+    public LeaderboardEntry(Long rank, String username, int score, int longestStreak, boolean isCurrentUser) {
         this.rank = rank;
         this.username = username;
         this.score = score;
-        this.numDecks = numDecks;
-        this.playedAt = playedAt;
+        this.longestStreak = longestStreak;
         this.isCurrentUser = isCurrentUser;
     }
 
@@ -48,20 +45,12 @@ public class LeaderboardEntry {
         this.score = score;
     }
 
-    public int getNumDecks() {
-        return numDecks;
+    public int getLongestStreak() {
+        return longestStreak;
     }
 
-    public void setNumDecks(int numDecks) {
-        this.numDecks = numDecks;
-    }
-
-    public LocalDateTime getPlayedAt() {
-        return playedAt;
-    }
-
-    public void setPlayedAt(LocalDateTime playedAt) {
-        this.playedAt = playedAt;
+    public void setLongestStreak(int longestStreak) {
+        this.longestStreak = longestStreak;
     }
 
     public boolean isCurrentUser() {

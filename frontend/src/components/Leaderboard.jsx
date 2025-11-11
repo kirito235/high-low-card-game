@@ -26,11 +26,6 @@ const Leaderboard = () => {
     }
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
-  };
-
   const getRankIcon = (rank) => {
     if (rank === 1) return '🥇';
     if (rank === 2) return '🥈';
@@ -75,6 +70,7 @@ const Leaderboard = () => {
         </div>
       ) : (
         <>
+          {/* Top 3 Podium */}
           <div className="podium">
             {leaderboard.slice(0, 3).map((entry, index) => (
               <div
@@ -84,20 +80,20 @@ const Leaderboard = () => {
                 <div className="podium-rank">{getRankIcon(entry.rank)}</div>
                 <div className="podium-username">{entry.username}</div>
                 <div className="podium-score">{entry.score} pts</div>
-                <div className="podium-decks">{entry.numDecks} decks</div>
+                <div className="podium-streak">🔥 {entry.longestStreak} streak</div>
               </div>
             ))}
           </div>
 
+          {/* Leaderboard Table */}
           <div className="leaderboard-table-container">
             <table className="leaderboard-table">
               <thead>
                 <tr>
                   <th>Rank</th>
                   <th>Player</th>
-                  <th>Score</th>
-                  <th>Decks</th>
-                  <th>Date</th>
+                  <th>Total Points</th>
+                  <th>Best Streak</th>
                 </tr>
               </thead>
               <tbody>
@@ -112,8 +108,9 @@ const Leaderboard = () => {
                       {entry.isCurrentUser && <span className="you-badge">YOU</span>}
                     </td>
                     <td className="score-cell">{entry.score}</td>
-                    <td>{entry.numDecks}</td>
-                    <td className="date-cell">{formatDate(entry.playedAt)}</td>
+                    <td className="streak-cell">
+                      <span className="streak-badge">🔥 {entry.longestStreak}</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>

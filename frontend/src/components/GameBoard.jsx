@@ -7,13 +7,9 @@ import '../styles/GameBoard.css';
 import statsService from '../services/statsService';
 import Toast from "./Toast";
 
-
-
-// Hint Configuration
 const TOTAL_HINTS = 3;
 const ROUNDS_PER_HINT = 3;
 
-// Helper function to convert card codes to full names in messages
 const convertCardNamesInMessage = (message) => {
   const cardPattern = /\b([2-9]|10|[AJQK])([SHDC])\b/g;
 
@@ -43,13 +39,16 @@ const GameBoard = () => {
   const [lastDrawnCard, setLastDrawnCard] = useState(null);
   const [isFlipping, setIsFlipping] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [hintsLeft, setHintsLeft] = useState(3); // ADD THIS - Number of hints
-  const [hintsRoundsLeft, setHintsRoundsLeft] = useState(0); // ADD THIS - Rounds hint is active
-  const [showProbabilities, setShowProbabilities] = useState(false); // ADD THIS
+  const [hintsLeft, setHintsLeft] = useState(3);
+  const [hintsRoundsLeft, setHintsRoundsLeft] = useState(0);
+  const [showProbabilities, setShowProbabilities] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [isBackendLoading, setIsBackendLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState(null);
 
+  const [showStatsPopup, setShowStatsPopup] = useState(false);
+  const [finalStats, setFinalStats] = useState(null);
+  const [currentGameScore, setCurrentGameScore] = useState(0); // ✅ NEW
 
   useEffect(() => {
     const keepAwake = setInterval(async () => {
@@ -59,13 +58,11 @@ const GameBoard = () => {
       } catch (error) {
         console.log('❌ Backend ping failed:', error);
       }
-    }, 10 * 60 * 1000); // 10 minutes in milliseconds
+    }, 10 * 60 * 1000);
 
-    // Cleanup: stop pinging when component unmounts
     return () => clearInterval(keepAwake);
   }, []);
 
-  // Initial ping when component mounts to wake backend immediately
   useEffect(() => {
     const wakeBackend = async () => {
       setIsBackendLoading(true);
@@ -75,7 +72,6 @@ const GameBoard = () => {
         setIsBackendLoading(false);
       } catch (error) {
         console.log('⏳ Backend is waking up...');
-        // Retry after 2 seconds
         setTimeout(async () => {
           try {
             await gameService.healthCheck();
@@ -83,7 +79,7 @@ const GameBoard = () => {
             setIsBackendLoading(false);
           } catch (err) {
             console.log('⏳ Still waiting for backend...');
-            setIsBackendLoading(false); // Stop blocking UI after retry
+            setIsBackendLoading(false);
           }
         }, 2000);
       }
@@ -92,11 +88,9 @@ const GameBoard = () => {
     wakeBackend();
   }, []);
 
-  // Keyboard controls for start screen
   useEffect(() => {
     if (!isStarted && !loading) {
       const handleStartScreenKeys = (event) => {
-        // Arrow keys to adjust number of decks
         if (event.key === 'ArrowUp') {
           event.preventDefault();
           setNumDecks(prev => Math.min(10, prev + 1));
@@ -114,97 +108,80 @@ const GameBoard = () => {
     }
   }, [isStarted, loading, numDecks]);
 
-  // Keyboard controls for Higher/Lower AND Deck Selection
   useEffect(() => {
     const handleKeyPress = (event) => {
-      // Only process if game is active
       if (!isStarted || gameState?.gameOver || loading) {
         return;
       }
 
-      // Number keys 1-9, 0 for deck selection
       if (event.key >= '1' && event.key <= '9') {
         const deckIndex = parseInt(event.key) - 1;
-
-        // Check if deck exists and is not eliminated
         if (gameState?.deckValues && deckIndex < gameState.deckValues.length) {
           const deckValue = gameState.deckValues[deckIndex];
           if (deckValue !== 'XX') {
             event.preventDefault();
             setSelectedDeck(deckIndex);
-            console.log(`Selected Deck ${event.key}`);
-          } else {
-            console.log(`Deck ${event.key} is eliminated`);
           }
         }
       }
 
-      // Key '0' for 10th deck (if it exists)
       if (event.key === '0') {
-        const deckIndex = 9; // 10th deck
+        const deckIndex = 9;
         if (gameState?.deckValues && deckIndex < gameState.deckValues.length) {
           const deckValue = gameState.deckValues[deckIndex];
           if (deckValue !== 'XX') {
             event.preventDefault();
             setSelectedDeck(deckIndex);
-            console.log('Selected Deck 10');
-          } else {
-            console.log('Deck 10 is eliminated');
           }
         }
       }
 
-      // Arrow Up or 'H' for Higher (only if deck is selected)
+      if (event.key === 'ArrowLeft' && selectedDeck !== null) {
+        event.preventDefault();
+        moveSelection(-1);
+      }
+
+      if (event.key === 'ArrowRight' && selectedDeck !== null) {
+        event.preventDefault();
+        moveSelection(1);
+      }
+
       if ((event.key === 'ArrowUp' || event.key.toLowerCase() === 'h') && selectedDeck !== null) {
         event.preventDefault();
         makeGuess('h');
       }
 
-      // Arrow Down or 'L' for Lower (only if deck is selected)
       if ((event.key === 'ArrowDown' || event.key.toLowerCase() === 'l') && selectedDeck !== null) {
         event.preventDefault();
         makeGuess('l');
       }
     };
 
-    // Add event listener
     window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isStarted, gameState, selectedDeck, loading]);
 
-    // Cleanup function to remove listener
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [isStarted, gameState, selectedDeck, loading]); // Dependencies
+  const moveSelection = (direction) => {
+    if (!gameState || selectedDeck === null) return;
 
-  // Keyboard controls for Higher/Lower
-  useEffect(() => {
-    const handleKeyPress = (event) => {
-      // Only process if game is active and a deck is selected
-      if (!isStarted || gameState?.gameOver || selectedDeck === null || loading) {
-        return;
-      }
+    let newIndex = selectedDeck + direction;
+    const totalDecks = gameState.deckValues.length;
 
-      // Arrow Up or 'H' for Higher
-      if (event.key === 'ArrowUp' || event.key.toLowerCase() === 'h') {
-        event.preventDefault();
-        makeGuess('h');
-      }
+    if (newIndex < 0) newIndex = totalDecks - 1;
+    if (newIndex >= totalDecks) newIndex = 0;
 
-      // Arrow Down or 'L' for Lower
-      if (event.key === 'ArrowDown' || event.key.toLowerCase() === 'l') {
-        event.preventDefault();
-        makeGuess('l');
-      }
-    };
+    let attempts = 0;
+    while (gameState.deckValues[newIndex] === 'XX' && attempts < totalDecks) {
+      newIndex += direction;
+      if (newIndex < 0) newIndex = totalDecks - 1;
+      if (newIndex >= totalDecks) newIndex = 0;
+      attempts++;
+    }
 
-    // Add event listener
-    window.addEventListener('keydown', handleKeyPress);
-
-    // Cleanup function to remove listener
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [isStarted, gameState, selectedDeck, loading]); // Dependencies
+    if (gameState.deckValues[newIndex] !== 'XX') {
+      setSelectedDeck(newIndex);
+    }
+  };
 
   const startGame = async () => {
     setLoading(true);
@@ -214,11 +191,17 @@ const GameBoard = () => {
       const state = await gameService.startGame(numDecks);
       setGameState(state);
       setIsStarted(true);
-      setMessage(convertCardNamesInMessage(state.message)); // UPDATE THIS
+      setMessage(convertCardNamesInMessage(state.message));
       setLastDrawnCard(null);
       setHintsLeft(TOTAL_HINTS);
       setHintsRoundsLeft(0);
       setShowProbabilities(false);
+      setCurrentGameScore(0); // ✅ Reset game score
+
+      if (state.deckValues && state.deckValues.length > 0) {
+        setSelectedDeck(0);
+      }
+
       await new Promise(resolve => setTimeout(resolve, 250));
       await loadProbabilities();
     } catch (error) {
@@ -255,7 +238,6 @@ const GameBoard = () => {
       const deckNumber = selectedDeck + 1;
       const newState = await gameService.makeGuess(deckNumber, guess);
 
-      // Extract drawn card
       const cardMatch = newState.message.match(/(?:final card was|new card was|card was) ([A-K0-9]+[SHDC])/i);
       const drawnCard = cardMatch ? cardMatch[1] : null;
 
@@ -265,12 +247,24 @@ const GameBoard = () => {
 
         setTimeout(() => {
           setGameState(newState);
+          setCurrentGameScore(newState.score); // ✅ Update current game score
           const convertedMessage = convertCardNamesInMessage(newState.message);
           setMessage(convertedMessage);
-          setSelectedDeck(null);
+
+          if (newState.deckValues[selectedDeck] === 'XX') {
+            let nextDeck = selectedDeck;
+            for (let i = 1; i < newState.deckValues.length; i++) {
+              const testIndex = (selectedDeck + i) % newState.deckValues.length;
+              if (newState.deckValues[testIndex] !== 'XX') {
+                nextDeck = testIndex;
+                break;
+              }
+            }
+            setSelectedDeck(nextDeck);
+          }
+
           setIsFlipping(false);
 
-          // Handle hint countdown
           if (hintsRoundsLeft > 0) {
             const newRounds = hintsRoundsLeft - 1;
             setHintsRoundsLeft(newRounds);
@@ -282,7 +276,6 @@ const GameBoard = () => {
             }
           }
 
-          // Confetti
           if (newState.gameOver && newState.won) {
             setShowConfetti(true);
             setTimeout(() => setShowConfetti(false), 7000);
@@ -297,10 +290,21 @@ const GameBoard = () => {
         }, 500);
 
       } else {
-        // Fallback if card not detected
         setGameState(newState);
+        setCurrentGameScore(newState.score); // ✅ Update current game score
         setMessage(convertCardNamesInMessage(newState.message));
-        setSelectedDeck(null);
+
+        if (newState.deckValues[selectedDeck] === 'XX') {
+          let nextDeck = selectedDeck;
+          for (let i = 1; i < newState.deckValues.length; i++) {
+            const testIndex = (selectedDeck + i) % newState.deckValues.length;
+            if (newState.deckValues[testIndex] !== 'XX') {
+              nextDeck = testIndex;
+              break;
+            }
+          }
+          setSelectedDeck(nextDeck);
+        }
 
         if (newState.gameOver && newState.won) {
           setShowConfetti(true);
@@ -314,7 +318,6 @@ const GameBoard = () => {
         setLoading(false);
       }
 
-      // ✅ SAVE GAME RESULT HERE (outside of animation timeout)
       if (newState.gameOver) {
         try {
           await statsService.saveGameResult(
@@ -322,7 +325,11 @@ const GameBoard = () => {
             numDecks,
             newState.won
           );
-          setToastMessage("🎯 Game Saved to Stats!");
+
+          const updatedStats = await statsService.getMyStats();
+          setFinalStats(updatedStats);
+          setShowStatsPopup(true);
+
         } catch (err) {
           setToastMessage("⚠️ Could not save stats!");
         }
@@ -336,7 +343,6 @@ const GameBoard = () => {
     }
   };
 
-
   const resetGame = async () => {
     setLoading(true);
     try {
@@ -349,9 +355,12 @@ const GameBoard = () => {
       setLastDrawnCard(null);
       setIsFlipping(false);
       setShowConfetti(false);
-      setHintsLeft(TOTAL_HINTS); // ADD THIS
-      setHintsRoundsLeft(0); // ADD THIS
-      setShowProbabilities(false); // ADD THIS
+      setHintsLeft(TOTAL_HINTS);
+      setHintsRoundsLeft(0);
+      setShowProbabilities(false);
+      setShowStatsPopup(false);
+      setFinalStats(null);
+      setCurrentGameScore(0); // ✅ Reset game score
     } catch (error) {
       setMessage('Error resetting game!');
     }
@@ -371,26 +380,44 @@ const GameBoard = () => {
     }
   };
 
+  const handlePlayAgainFromPopup = () => {
+    setShowStatsPopup(false);
+    resetGame();
+  };
+
+  // ✅ FIXED: Calculate remaining cards correctly
+  const getRemainingCards = () => {
+    if (!gameState) return 52;
+
+    // Count cards in remaining deck
+    let totalRemaining = 0;
+    if (gameState.remainingCards) {
+      Object.values(gameState.remainingCards).forEach(suitCards => {
+        totalRemaining += suitCards.length;
+      });
+    }
+
+    return totalRemaining;
+  };
+
   return (
     <div className="game-board">
       <h1 className="game-title">🎴 High-Low Card Game 🎴</h1>
 
-      {/* Backend Loading Screen */}
-          {isBackendLoading && (
-            <div className="loading-overlay">
-              <div className="loading-content">
-                <div className="loading-spinner-large">⏳</div>
-                <h2>Waking up the server...</h2>
-                <p>This may take up to 30 seconds on first load</p>
-                <div className="loading-bar">
-                  <div className="loading-bar-fill"></div>
-                </div>
-                <p className="loading-tip">💡 Tip: The game will load faster on subsequent visits!</p>
-              </div>
+      {isBackendLoading && (
+        <div className="loading-overlay">
+          <div className="loading-content">
+            <div className="loading-spinner-large">⏳</div>
+            <h2>Waking up the server...</h2>
+            <p>This may take up to 30 seconds on first load</p>
+            <div className="loading-bar">
+              <div className="loading-bar-fill"></div>
             </div>
-          )}
+            <p className="loading-tip">💡 Tip: The game will load faster on subsequent visits!</p>
+          </div>
+        </div>
+      )}
 
-      {/* Confetti Effect */}
       {showConfetti && (
         <Confetti
           width={window.innerWidth}
@@ -398,6 +425,56 @@ const GameBoard = () => {
           recycle={false}
           numberOfPieces={500}
           gravity={0.3}
+        />
+      )}
+
+      {/* ✅ UPDATED: Stats Popup with Current Game Score */}
+      {showStatsPopup && finalStats && (
+        <div className="stats-popup-overlay">
+          <div className="stats-popup">
+            <h2>{gameState?.won ? '🎉 Victory! 🎉' : '💪 Game Over!'}</h2>
+            <div className="popup-stats-grid">
+              <div className="popup-stat">
+                <div className="popup-stat-icon">🎯</div>
+                <div className="popup-stat-value">{currentGameScore}</div>
+                <div className="popup-stat-label">This Game Score</div>
+              </div>
+              <div className="popup-stat">
+                <div className="popup-stat-icon">🏆</div>
+                <div className="popup-stat-value">{finalStats.bestScore}</div>
+                <div className="popup-stat-label">Total Points</div>
+              </div>
+              <div className="popup-stat">
+                <div className="popup-stat-icon">🥇</div>
+                <div className="popup-stat-value">
+                  {finalStats.userRank !== null && finalStats.bestScore > 0
+                    ? `#${finalStats.userRank}`
+                    : 'N/A'}
+                </div>
+                <div className="popup-stat-label">Global Rank</div>
+              </div>
+              <div className="popup-stat">
+                <div className="popup-stat-icon">🔥</div>
+                <div className="popup-stat-value">{finalStats.currentWinStreak}</div>
+                <div className="popup-stat-label">Win Streak</div>
+              </div>
+              <div className="popup-stat">
+                <div className="popup-stat-icon">📊</div>
+                <div className="popup-stat-value">{finalStats.winRate.toFixed(1)}%</div>
+                <div className="popup-stat-label">Win Rate</div>
+              </div>
+            </div>
+            <button className="popup-play-again-btn" onClick={handlePlayAgainFromPopup}>
+              🎮 Play Again
+            </button>
+          </div>
+        </div>
+      )}
+
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          onClose={() => setToastMessage(null)}
         />
       )}
 
@@ -428,40 +505,24 @@ const GameBoard = () => {
           <div className="rules">
             <h3>How to Play:</h3>
             <ul>
-                <li>The objective of the game is to guess all the cards correctly.</li>
-                <li>The selected number of decks will be placed face-up.</li>
-                <li>The player must choose a deck and guess whether the next drawn card will be higher or lower than the current top card.</li>
-                <li>If the guess is correct, the new card replaces the top card of that deck.</li>
-                <li>If the guess is wrong, that deck is eliminated and can no longer be used.</li>
-                <li>The more decks you keep in play, the higher your chances of winning.</li>
+              <li>The objective of the game is to guess all the cards correctly.</li>
+              <li>The selected number of decks will be placed face-up.</li>
+              <li>The player must choose a deck and guess whether the next drawn card will be higher or lower than the current top card.</li>
+              <li>If the guess is correct, the new card replaces the top card of that deck.</li>
+              <li>If the guess is wrong, that deck is eliminated and can no longer be used.</li>
+              <li>Points are awarded for every card you survive - win or lose!</li>
             </ul>
             <h3>Keyboard Shortcuts:</h3>
-              <ul>
-                <li><strong>1-9, 0</strong> → Select Deck 1-10</li>
-                <li><strong>↑ Arrow Up</strong> or <strong>H</strong> → Higher</li>
-                <li><strong>↓ Arrow Down</strong> or <strong>L</strong> → Lower</li>
-              </ul>
-
-            <h3>Hints:</h3>
             <ul>
-              <li>Click the <strong>💡 Hint button</strong> (top right)</li>
-              <li>Shows probabilities for {ROUNDS_PER_HINT} rounds</li>
-              <li>You have <strong>{TOTAL_HINTS} hints</strong> per game</li>
-            </ul>
-
-            <h3>Strategy Tips:</h3>
-            <ul>
-              <li>Use hints wisely on difficult decisions</li>
-              <li>Remember which cards have been played</li>
-              <li>Low cards (A-5) are more likely to go higher</li>
-              <li>High cards (9-K) are more likely to go lower</li>
-              <li>Middle cards (6-8) are tricky!</li>
+              <li><strong>1-9, 0</strong> → Select Deck 1-10</li>
+              <li><strong>← →</strong> → Navigate between decks</li>
+              <li><strong>↑ Arrow Up</strong> or <strong>H</strong> → Higher</li>
+              <li><strong>↓ Arrow Down</strong> or <strong>L</strong> → Lower</li>
             </ul>
           </div>
         </div>
       ) : (
         <>
-          {/* Hint Button - Fixed Top Right */}
           <div className="hint-floating-topright">
             <button
               className="hint-button"
@@ -481,7 +542,6 @@ const GameBoard = () => {
             )}
           </div>
 
-          {/* How to Play Button - Fixed Top Left */}
           <div className="rules-button-container">
             <button
               className="rules-button"
@@ -492,7 +552,6 @@ const GameBoard = () => {
             </button>
           </div>
 
-          {/* Rules Modal */}
           {showRules && (
             <div className="rules-modal-overlay" onClick={() => setShowRules(false)}>
               <div className="rules-modal" onClick={(e) => e.stopPropagation()}>
@@ -501,17 +560,17 @@ const GameBoard = () => {
                 <div className="rules-content">
                   <h3>📋 Game Rules:</h3>
                   <ul>
-                      <li>The objective of the game is to guess all the cards correctly.</li>
-                      <li>The selected number of decks will be placed face-up.</li>
-                      <li>The player must choose a deck and guess whether the next drawn card will be higher or lower than the current top card.</li>
-                      <li>If the guess is correct, the new card replaces the top card of that deck.</li>
-                      <li>If the guess is wrong, that deck is eliminated and can no longer be used.</li>
-                      <li>The more decks you keep in play, the higher your chances of winning.</li>
+                    <li>The objective is to guess as many cards correctly as possible.</li>
+                    <li>Select a deck and guess if the next card is higher or lower.</li>
+                    <li>Correct guesses keep the deck active; wrong guesses eliminate it.</li>
+                    <li>You earn points for every card you survive - even if you lose!</li>
+                    <li>Fewer decks = harder game = higher score multiplier.</li>
                   </ul>
 
                   <h3>⌨️ Keyboard Shortcuts:</h3>
                   <ul>
                     <li><strong>1-9, 0</strong> → Select Deck 1-10</li>
+                    <li><strong>← →</strong> → Navigate between decks</li>
                     <li><strong>↑ Arrow Up</strong> or <strong>H</strong> → Higher</li>
                     <li><strong>↓ Arrow Down</strong> or <strong>L</strong> → Lower</li>
                   </ul>
@@ -529,7 +588,6 @@ const GameBoard = () => {
                     <li>Remember which cards have been played</li>
                     <li>Low cards (A-5) are more likely to go higher</li>
                     <li>High cards (9-K) are more likely to go lower</li>
-                    <li>Middle cards (6-8) are tricky!</li>
                   </ul>
                 </div>
                 <button className="close-button-modal" onClick={() => setShowRules(false)}>
@@ -539,15 +597,12 @@ const GameBoard = () => {
             </div>
           )}
 
-          {/* 1. Game Status Message */}
           <div className={`message-display ${gameState?.gameOver ? 'game-over' : ''} ${loading ? 'loading' : ''}`}>
             {loading && <span className="loading-spinner">⏳ </span>}
             {message}
           </div>
 
-          {/* 2. Game Area - Draw Deck + Player Decks */}
           <div className="play-area">
-            {/* Left: Draw Deck */}
             <div className="draw-deck-section">
               <DeckDisplay
                 lastDrawnCard={lastDrawnCard}
@@ -555,7 +610,6 @@ const GameBoard = () => {
               />
             </div>
 
-            {/* Right: Player Decks */}
             <div className="player-decks-section">
               <div className="cards-container">
                 {gameState?.deckValues.map((card, index) => (
@@ -575,7 +629,6 @@ const GameBoard = () => {
             </div>
           </div>
 
-          {/* 3. Control Buttons - Higher/Lower */}
           {!gameState?.gameOver && (
             <div className="controls">
               <button
@@ -595,7 +648,6 @@ const GameBoard = () => {
             </div>
           )}
 
-          {/* 4. Score Bar */}
           <div className="score-bar">
             <div className="score-item">
               <span className="score-label">Score</span>
@@ -603,7 +655,7 @@ const GameBoard = () => {
             </div>
             <div className="score-item">
               <span className="score-label">Remaining Cards</span>
-              <span className="score-value">{52 - (gameState?.score || 0)}</span>
+              <span className="score-value">{getRemainingCards()}</span>
             </div>
             <div className="score-item">
               <span className="score-label">Active Decks</span>
@@ -613,7 +665,6 @@ const GameBoard = () => {
             </div>
           </div>
 
-          {/* 5. Reset Button */}
           <button
             className="reset-button"
             onClick={resetGame}
