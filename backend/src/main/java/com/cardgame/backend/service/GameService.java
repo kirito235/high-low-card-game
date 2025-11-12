@@ -24,8 +24,8 @@ public class GameService {
      */
     private double getScoreMultiplier(int numDecks) {
         switch (numDecks) {
-            case 6: return 2.5;  // Hardest
-            case 7: return 2.0;
+            case 6: return 2.0;  // Hardest
+            case 7: return 1.8;
             case 8: return 1.5;
             case 9: return 1.2;
             case 10: return 1.0; // Easiest

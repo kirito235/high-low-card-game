@@ -9,7 +9,7 @@ const Stats = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isGuest } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -106,13 +106,14 @@ const Stats = () => {
             <div className="stat-label">Avg Score</div>
           </div>
 
-          {/* ✅ FIXED: Display N/A if user hasn't won yet */}
+          {/* ✅ FIXED: Show N/A for guests OR if no score yet */}
           <div className="stat-card">
             <div className="stat-icon">🥇</div>
             <div className="stat-value">
-              {stats.userRank !== null && stats.bestScore > 0
-                ? `#${stats.userRank}`
-                : 'N/A'}
+              {isGuest ? 'N/A' :
+                (stats.userRank !== null && stats.bestScore > 0
+                  ? `#${stats.userRank}`
+                  : 'N/A')}
             </div>
             <div className="stat-label">Global Rank</div>
           </div>

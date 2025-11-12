@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import statsService from '../services/statsService';
 import '../styles/Leaderboard.css';
 
@@ -7,6 +8,7 @@ const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -59,9 +61,15 @@ const Leaderboard = () => {
     <div className="leaderboard-container">
       <div className="leaderboard-header">
         <h1>🏆 Global Leaderboard</h1>
-        <button onClick={() => navigate('/game')} className="back-button">
-          ← Back to Game
-        </button>
+        {isAuthenticated ? (
+          <button onClick={() => navigate('/game')} className="back-button">
+            ← Back to Game
+          </button>
+        ) : (
+          <button onClick={() => navigate('/login')} className="back-button">
+            Login
+          </button>
+        )}
       </div>
 
       {leaderboard.length === 0 ? (
@@ -120,11 +128,14 @@ const Leaderboard = () => {
       )}
 
       <div className="button-group">
-        <button onClick={() => navigate('/stats')} className="nav-button">
-          📊 View My Stats
-        </button>
-        <button onClick={() => navigate('/game')} className="nav-button primary">
-          🎮 Play Game
+        {/* ✅ Only show "View My Stats" if authenticated */}
+        {isAuthenticated && (
+          <button onClick={() => navigate('/stats')} className="nav-button">
+            📊 View My Stats
+          </button>
+        )}
+        <button onClick={() => navigate(isAuthenticated ? '/game' : '/login')} className="nav-button primary">
+          {isAuthenticated ? '🎮 Play Game' : '🔐 Login to Play'}
         </button>
       </div>
     </div>

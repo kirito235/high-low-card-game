@@ -6,6 +6,7 @@ import '../styles/Auth.css';
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, loginAsGuest } = useAuth();
@@ -64,15 +65,25 @@ const Login = () => {
 
           <div className="form-group">
             <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="Enter your password"
-              disabled={loading}
-            />
+            <div className="password-input-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="Enter your password"
+                disabled={loading}
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={loading}
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
           </div>
 
           <button type="submit" className="auth-button" disabled={loading}>
@@ -87,6 +98,12 @@ const Login = () => {
         <button onClick={handleGuestLogin} className="guest-button" disabled={loading}>
           🎮 Continue as Guest
         </button>
+
+        <div className="auth-links">
+          <Link to="/forgot-password" className="forgot-password-link">
+            Forgot Password?
+          </Link>
+        </div>
 
         <p className="auth-footer">
           Don't have an account? <Link to="/signup">Sign up here</Link>
