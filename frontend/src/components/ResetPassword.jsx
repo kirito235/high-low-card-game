@@ -3,13 +3,15 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import '../styles/Auth.css';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL
-  ? `${process.env.REACT_APP_API_URL}/api/auth`
-  : 'http://localhost:8080/api/auth';
+// ---- FIXED API URL LOGIC ----
+// Never fall back to localhost in production.
+// Build-time env variables MUST be used for production.
+const API_BASE_URL = `${process.env.REACT_APP_API_URL}/api/auth`;
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -46,14 +48,22 @@ const ResetPassword = () => {
         token,
         newPassword: password
       });
+
       setMessage(response.data.message || 'Password reset successfully!');
       setTimeout(() => navigate('/login'), 2000);
+
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to reset password. Please try again.');
+      setError(
+        err.response?.data?.message ||
+        'Failed to reset password. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  // Debug: remove after testing
+  console.log("API_BASE_URL:", API_BASE_URL);
 
   return (
     <div className="auth-container">

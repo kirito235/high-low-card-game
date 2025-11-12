@@ -1,4 +1,1 @@
-# This file should be placed in frontend/public/_redirects
-# Render will use this to handle client-side routing
-
-/*    /index.html   200
+/* /index.html 200
