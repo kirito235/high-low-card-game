@@ -109,10 +109,6 @@ public class GameController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * ✅ FIXED: Save game result - ALWAYS updates points (win or loss)
-     * Best score is updated regardless of win/loss if current score is higher
-     */
     @PostMapping("/save")
     public ResponseEntity<?> saveGameResult(@RequestBody Map<String, Object> gameResult) {
         try {
@@ -125,38 +121,34 @@ public class GameController {
             User user = userRepository.findByUsername(userDetails.getUsername())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            int score = (Integer) gameResult.get("score");
-            int numDecks = (Integer) gameResult.get("numDecks");
+            // ✅ FIX: Safe integer extraction
+            int score = ((Number) gameResult.get("score")).intValue();
+            int numDecks = ((Number) gameResult.get("numDecks")).intValue();
             boolean won = (Boolean) gameResult.get("won");
 
-            // ✅ Save to game history (keep full history)
+            // ✅ FIX: Initialize null values
+            if (user.getBestScore() == null) user.setBestScore(0);
+            if (user.getCurrentWinStreak() == null) user.setCurrentWinStreak(0);
+            if (user.getLongestWinStreak() == null) user.setLongestWinStreak(0);
+            if (user.getBestScoreDecks() == null) user.setBestScoreDecks(numDecks);
+
             GameHistory history = new GameHistory(user, score, numDecks, won);
             gameHistoryRepository.save(history);
 
-            // ✅ ALWAYS add current game score to total points (win or loss)
-            int currentBest = user.getBestScore() != null ? user.getBestScore() : 0;
+            int currentBest = user.getBestScore();
             user.setBestScore(currentBest + score);
 
-            // ✅ Update win streak (only for wins)
             if (won) {
-                user.setCurrentWinStreak(user.getCurrentWinStreak() + 1);
+                // ✅ Increment BEFORE checking
+                int newStreak = user.getCurrentWinStreak() + 1;
+                user.setCurrentWinStreak(newStreak);
 
-                // Update longest streak if current exceeds it
-                if (user.getCurrentWinStreak() > user.getLongestWinStreak()) {
-                    user.setLongestWinStreak(user.getCurrentWinStreak());
-                }
-
-                // Update deck count for wins
-                if (currentBest == 0) {
-                    user.setBestScoreDecks(numDecks);
+                // ✅ Then check if it's the longest
+                if (newStreak > user.getLongestWinStreak()) {
+                    user.setLongestWinStreak(newStreak);
                 }
             } else {
-                user.setCurrentWinStreak(0); // Reset streak on loss
-
-                // ✅ Update deck count even on loss if first game or better score
-                if (currentBest == 0 || score > (currentBest - score)) {
-                    user.setBestScoreDecks(numDecks);
-                }
+                user.setCurrentWinStreak(0);
             }
 
             userRepository.save(user);
@@ -167,7 +159,9 @@ public class GameController {
 
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 }

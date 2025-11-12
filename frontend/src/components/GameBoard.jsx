@@ -45,7 +45,7 @@ const GameBoard = () => {
   const [showRules, setShowRules] = useState(false);
   const [isBackendLoading, setIsBackendLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState(null);
-
+  const [saving, setSaving] = useState(false);
   const [showStatsPopup, setShowStatsPopup] = useState(false);
   const [finalStats, setFinalStats] = useState(null);
   const [currentGameScore, setCurrentGameScore] = useState(0); // ✅ NEW
@@ -160,6 +160,32 @@ const GameBoard = () => {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [isStarted, gameState, selectedDeck, loading]);
+
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (!isStarted || gameState?.gameOver || loading) {
+        return;
+      }
+      if (event.key === 'Enter' && event.shiftKey) {
+        event.preventDefault();
+        handleHintClick();
+        return;
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isStarted, gameState, selectedDeck, loading, hintsLeft, hintsRoundsLeft]);
+
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && showStatsPopup) {
+        handlePlayAgainFromPopup();
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [showStatsPopup]);
 
   const moveSelection = (direction) => {
     if (!gameState || selectedDeck === null) return;
@@ -320,6 +346,7 @@ const GameBoard = () => {
 
       if (newState.gameOver) {
         try {
+          setSaving(true);
           await statsService.saveGameResult(
             newState.score,
             numDecks,
@@ -340,6 +367,18 @@ const GameBoard = () => {
       setMessage('Error making guess!');
       setIsFlipping(false);
       setLoading(false);
+    }
+  };
+
+  const saveWithRetry = async (score, numDecks, won, retries = 3) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        await statsService.saveGameResult(score, numDecks, won);
+        return true;
+      } catch (err) {
+        if (i === retries - 1) throw err;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
   };
 
@@ -478,6 +517,15 @@ const GameBoard = () => {
         />
       )}
 
+      {!gameState?.gameOver && (
+        <div className="keyboard-shortcuts-hint">
+          <span>💡 Shift+Enter</span>
+          <span>← → Navigate</span>
+          <span>↑ Higher</span>
+          <span>↓ Lower</span>
+        </div>
+      )}
+
       {!isStarted ? (
         <div className="start-screen">
           <h2>Welcome to High-Low Card Game!</h2>
@@ -518,6 +566,7 @@ const GameBoard = () => {
               <li><strong>← →</strong> → Navigate between decks</li>
               <li><strong>↑ Arrow Up</strong> or <strong>H</strong> → Higher</li>
               <li><strong>↓ Arrow Down</strong> or <strong>L</strong> → Lower</li>
+              <li><strong>Shift + Enter</strong> → Activate Hint</li>
             </ul>
           </div>
         </div>
@@ -573,6 +622,7 @@ const GameBoard = () => {
                     <li><strong>← →</strong> → Navigate between decks</li>
                     <li><strong>↑ Arrow Up</strong> or <strong>H</strong> → Higher</li>
                     <li><strong>↓ Arrow Down</strong> or <strong>L</strong> → Lower</li>
+                    <li><strong>Shift + Enter</strong> → Activate Hint</li>
                   </ul>
 
                   <h3>💡 Hints:</h3>
