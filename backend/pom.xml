@@ -54,7 +54,6 @@
 			<version>4.12.0</version>
 		</dependency>
 
-
 		<!-- Database Support -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
