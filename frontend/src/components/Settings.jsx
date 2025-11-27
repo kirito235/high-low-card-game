@@ -24,8 +24,9 @@ const THEME_OPTIONS = [
 const CARD_BACK_OPTIONS = [
   { id: 'default', name: 'Classic Red', preview: '/cards/back.png' },
   { id: 'blue', name: 'Royal Blue', preview: '/cards/back-blue.png' },
-  { id: 'green', name: 'Emerald Green', preview: '/cards/back-green.png' },
-  { id: 'gold', name: 'Golden Luxury', preview: '/cards/back-gold.png' }
+  { id: 'purple', name: 'Emerald Green', preview: '/cards/back-purple.png' },
+  { id: 'red', name: 'Golden Luxury', preview: '/cards/back-red.png' }
+  { id: 'orange', name: 'Golden Luxury', preview: '/cards/back-orange.png' }
 ];
 
 const Settings = () => {
@@ -251,12 +252,12 @@ const Settings = () => {
             />
           </div>
 
-          <div className="sound-test-buttons">
-            <button onClick={() => testSound('flip')}>🎴 Card Flip</button>
-            <button onClick={() => testSound('correct')}>✅ Correct</button>
-            <button onClick={() => testSound('wrong')}>❌ Wrong</button>
-            <button onClick={() => testSound('victory')}>🎉 Victory</button>
-          </div>
+{/*           <div className="sound-test-buttons"> */}
+{/*             <button onClick={() => testSound('flip')}>🎴 Card Flip</button> */}
+{/*             <button onClick={() => testSound('correct')}>✅ Correct</button> */}
+{/*             <button onClick={() => testSound('wrong')}>❌ Wrong</button> */}
+{/*             <button onClick={() => testSound('victory')}>🎉 Victory</button> */}
+{/*           </div> */}
         </div>
 
         {/* Avatar Selection */}
