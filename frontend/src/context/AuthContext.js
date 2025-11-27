@@ -36,6 +36,18 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     authService.logout();
     setUser(null);
+
+    // ✅ Clear user-specific localStorage on logout
+    localStorage.removeItem('gameTheme');
+    localStorage.removeItem('userAvatar');
+    localStorage.removeItem('cardBack');
+
+    // ✅ Reset to default theme
+    document.documentElement.style.setProperty(
+      '--game-gradient',
+      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+    );
+    document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
   };
 
   const value = {

@@ -29,8 +29,9 @@ const getCardBackImage = () => {
   const cardBackMap = {
     'default': '/cards/back.png',
     'blue': '/cards/back-blue.png',
-    'green': '/cards/back-green.png',
-    'gold': '/cards/back-gold.png'
+    'red': '/cards/back-red.png',      // ✅ ADD THIS
+    'purple': '/cards/back-purple.png', // ✅ ADD THIS
+    'orange': '/cards/back-orange.png'  // ✅ ADD THIS
   };
 
   return cardBackMap[selectedCardBack] || '/cards/back.png';

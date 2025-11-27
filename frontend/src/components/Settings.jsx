@@ -230,7 +230,7 @@ const Settings = () => {
       const confirmLeave = window.confirm('You have unsaved changes. Are you sure you want to leave?');
       if (!confirmLeave) return;
     }
-    navigate(-1);
+    navigate('/game');
   };
 
   return (

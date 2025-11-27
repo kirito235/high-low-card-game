@@ -201,6 +201,44 @@ const GameBoard = () => {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [showStatsPopup]);
 
+  // ✅ NEW: Check for existing game session on mount
+  useEffect(() => {
+    const checkExistingGame = async () => {
+      if (!isBackendLoading) {
+        try {
+          const state = await gameService.getGameState();
+          if (state && state.numDecks > 0) {
+            // There's an active game!
+            console.log('✅ Found existing game session');
+            setGameState(state);
+            setIsStarted(true);
+            setNumDecks(state.numDecks);
+            setMessage(convertCardNamesInMessage(state.message));
+
+            // Set last drawn card if available
+            if (state.deckValues && state.deckValues.length > 0) {
+              const lastCard = state.deckValues.find(card => card !== 'XX');
+              if (lastCard) {
+                setLastDrawnCard(lastCard);
+              }
+
+              // Select first active deck
+              const firstActiveDeck = state.deckValues.findIndex(card => card !== 'XX');
+              setSelectedDeck(firstActiveDeck >= 0 ? firstActiveDeck : null);
+            }
+
+            // Load probabilities
+            await loadProbabilities();
+          }
+        } catch (error) {
+          console.log('No existing game session');
+        }
+      }
+    };
+
+    checkExistingGame();
+  }, [isBackendLoading]);
+
   const moveSelection = (direction) => {
     if (!gameState || selectedDeck === null) return;
 
@@ -288,7 +326,7 @@ const GameBoard = () => {
       const response = await gameService.makeGuess(deckNumber, guess, winStreak);
       const newState = response.gameState || response;
 
-      audioService.playCardFlip();
+//       audioService.playCardFlip();
 
       // ✅ FIX: Extract card from message more reliably
       let drawnCard = null;
