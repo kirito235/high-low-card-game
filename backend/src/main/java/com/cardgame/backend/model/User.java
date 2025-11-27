@@ -36,19 +36,15 @@ public class User {
 
     private boolean isGuest = false;
 
-    // ✅ NEW: Best score for leaderboard (instead of multiple entries)
     @Column(name = "best_score")
     private Integer bestScore = 0;
 
-    // ✅ NEW: Number of decks used for best score
     @Column(name = "best_score_decks")
     private Integer bestScoreDecks = 0;
 
-    // ✅ NEW: Win streak counter
     @Column(name = "current_win_streak")
     private Integer currentWinStreak = 0;
 
-    // ✅ NEW: Longest win streak ever
     @Column(name = "longest_win_streak")
     private Integer longestWinStreak = 0;
 
@@ -56,30 +52,18 @@ public class User {
     private Set<GameHistory> gameHistories = new HashSet<>();
 
     @Column(name = "stats_public")
-    private Boolean statsPublic = true; // Default to public
-
+    private Boolean statsPublic = true;
 
     @Column(name = "avatar")
-    private String avatar = "🎴"; // Default avatar
+    private String avatar = "🎴";
 
+    // ✅ NEW: Theme preference
+    @Column(name = "theme")
+    private String theme = "default";
 
-
-    public String getAvatar() {
-        return avatar;
-    }
-
-    public void setAvatar(String avatar) {
-        this.avatar = avatar;
-    }
-
-    // Add getter and setter:
-    public Boolean getStatsPublic() {
-        return statsPublic;
-    }
-
-    public void setStatsPublic(Boolean statsPublic) {
-        this.statsPublic = statsPublic;
-    }
+    // ✅ NEW: Card back preference
+    @Column(name = "card_back")
+    private String cardBack = "default";
 
     // Constructors
     public User() {
@@ -196,5 +180,39 @@ public class User {
 
     public void setGameHistories(Set<GameHistory> gameHistories) {
         this.gameHistories = gameHistories;
+    }
+
+    public Boolean getStatsPublic() {
+        return statsPublic;
+    }
+
+    public void setStatsPublic(Boolean statsPublic) {
+        this.statsPublic = statsPublic;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+
+    // ✅ NEW: Theme getters/setters
+    public String getTheme() {
+        return theme;
+    }
+
+    public void setTheme(String theme) {
+        this.theme = theme;
+    }
+
+    // ✅ NEW: Card back getters/setters
+    public String getCardBack() {
+        return cardBack;
+    }
+
+    public void setCardBack(String cardBack) {
+        this.cardBack = cardBack;
     }
 }

@@ -10,13 +10,93 @@
   justify-content: space-between;
   align-items: center;
   max-width: 1200px;
-  margin: 0 auto 40px auto;
+  margin: 0 auto 20px auto;
 }
 
 .settings-header h1 {
   color: white;
   font-size: 42px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.header-buttons {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+/* ✅ Save Button */
+.save-button {
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+  animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+  }
+  50% {
+    box-shadow: 0 6px 25px rgba(46, 204, 113, 0.7);
+  }
+}
+
+.save-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(46, 204, 113, 0.6);
+}
+
+.save-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  animation: none;
+}
+
+.back-button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid white;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background: white;
+  color: #667eea;
+  transform: translateY(-2px);
+}
+
+/* ✅ Unsaved Changes Banner */
+.unsaved-changes-banner {
+  max-width: 1200px;
+  margin: 0 auto 20px auto;
+  background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);
+  animation: shake 0.5s;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
 }
 
 .settings-content {
@@ -37,9 +117,16 @@
 .settings-section h2 {
   color: #2c3e50;
   font-size: 28px;
-  margin-bottom: 25px;
+  margin-bottom: 10px;
   border-bottom: 3px solid #667eea;
   padding-bottom: 10px;
+}
+
+.section-note {
+  color: #7f8c8d;
+  font-size: 14px;
+  margin-bottom: 20px;
+  font-style: italic;
 }
 
 /* Audio Settings */
@@ -163,6 +250,7 @@
   border-color: #667eea;
   background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
   box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+  transform: scale(1.05);
 }
 
 /* Theme Grid */
@@ -189,6 +277,7 @@
 .theme-option.selected {
   border-color: #667eea;
   box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+  transform: scale(1.05);
 }
 
 .theme-preview {
@@ -230,6 +319,7 @@
 .card-back-option.selected {
   border-color: #667eea;
   box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+  transform: scale(1.05);
 }
 
 .card-back-option img {
@@ -246,45 +336,7 @@
   color: #2c3e50;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .settings-header {
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .settings-header h1 {
-    font-size: 32px;
-  }
-
-  .avatar-grid {
-    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-  }
-
-  .avatar-option {
-    width: 60px;
-    height: 60px;
-    font-size: 30px;
-  }
-
-  .theme-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .card-back-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  }
-
-  .sound-test-buttons {
-    flex-direction: column;
-  }
-
-  .sound-test-buttons button {
-    width: 100%;
-  }
-}
-
-/* ✅ NEW: Privacy Settings Styles */
+/* Privacy Settings */
 .privacy-setting {
   display: flex;
   justify-content: space-between;
@@ -360,7 +412,53 @@
   right: auto;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
+  .settings-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .settings-header h1 {
+    font-size: 32px;
+  }
+
+  .header-buttons {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .save-button,
+  .back-button {
+    width: 100%;
+  }
+
+  .avatar-grid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  }
+
+  .avatar-option {
+    width: 60px;
+    height: 60px;
+    font-size: 30px;
+  }
+
+  .theme-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card-back-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .sound-test-buttons {
+    flex-direction: column;
+  }
+
+  .sound-test-buttons button {
+    width: 100%;
+  }
+
   .privacy-setting {
     flex-direction: column;
     text-align: center;
@@ -369,64 +467,4 @@
   .toggle-button {
     width: 100%;
   }
-}
-
-/* ✅ Private Profile Message */
-.private-profile-message {
-  background: white;
-  border-radius: 20px;
-  padding: 60px 40px;
-  text-align: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  max-width: 600px;
-  margin: 40px auto;
-}
-
-.lock-icon {
-  font-size: 80px;
-  margin-bottom: 20px;
-  opacity: 0.6;
-}
-
-.private-profile-message h2 {
-  color: #2c3e50;
-  margin-bottom: 15px;
-}
-
-.private-profile-message p {
-  color: #7f8c8d;
-  font-size: 16px;
-}
-
-/* ✅ Avatar in Podium */
-.podium-avatar {
-  font-size: 48px;
-  margin: 10px 0;
-}
-
-/* ✅ Avatar in Table */
-.avatar-small {
-  font-size: 24px;
-  margin-right: 10px;
-  display: inline-block;
-  vertical-align: middle;
-}
-
-.private-badge-small {
-  font-size: 12px;
-  margin-left: 8px;
-  opacity: 0.7;
-}
-
-/* ✅ Make all leaderboard entries clickable */
-.clickable,
-.clickable-row {
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.clickable:hover,
-.clickable-row:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
 }

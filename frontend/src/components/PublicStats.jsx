@@ -1,11 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from "react";
 import statsService from '../services/statsService';
+import { useAuth } from '../context/AuthContext';
 import '../styles/Stats.css';
 
 const PublicStats = () => {
   const { username } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -20,9 +22,12 @@ const PublicStats = () => {
     setError('');
     try {
       const data = await statsService.getUserStats(username);
-      
-      // Check if stats are public (backend should handle this)
-      if (data.error === 'STATS_PRIVATE') {
+
+      // ✅ Check if it's the user's own stats
+      const isOwnProfile = user && user.username === username;
+
+      // ✅ If stats are private and it's not the user's own profile, block access
+      if (!isOwnProfile && data.statsPublic === false) {
         setIsPrivate(true);
       } else {
         setStats(data);
@@ -161,4 +166,4 @@ const PublicStats = () => {
   );
 };
 
-export default PublicStats
+export default PublicStats;

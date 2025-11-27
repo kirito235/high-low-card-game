@@ -22,11 +22,11 @@ const THEME_OPTIONS = [
 ];
 
 const CARD_BACK_OPTIONS = [
-  { id: 'default', name: 'Classic Red', preview: '/cards/back.png' },
-  { id: 'blue', name: 'Royal Blue', preview: '/cards/back-blue.png' },
-  { id: 'purple', name: 'Emerald Green', preview: '/cards/back-purple.png' },
-  { id: 'red', name: 'Golden Luxury', preview: '/cards/back-red.png' }
-  { id: 'orange', name: 'Golden Luxury', preview: '/cards/back-orange.png' }
+  { id: 'default', name: 'Black', preview: '/cards/back.png' },
+  { id: 'blue', name: 'Blue', preview: '/cards/back-blue.png' },
+  { id: 'red', name: 'Red', preview: '/cards/back-red.png' },
+  { id: 'purple', name: 'Purple', preview: '/cards/back-purple.png' },
+  { id: 'orange', name: 'Orange', preview: '/cards/back-orange.png' }
 ];
 
 const Settings = () => {
@@ -47,55 +47,120 @@ const Settings = () => {
     localStorage.getItem('cardBack') || 'default'
   );
 
-  // ✅ NEW: Privacy settings
+  // Original values to track changes
+  const [originalAvatar, setOriginalAvatar] = useState(selectedAvatar);
+  const [originalTheme, setOriginalTheme] = useState(selectedTheme);
+  const [originalCardBack, setOriginalCardBack] = useState(selectedCardBack);
+  const [originalStatsPublic, setOriginalStatsPublic] = useState(true);
+
+  // Privacy settings
   const [statsPublic, setStatsPublic] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    applyTheme(selectedTheme);
-    loadPrivacySettings();
-  }, []);
+  // Track if changes were made
+  const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
-    applyTheme(selectedTheme);
-    loadPrivacySettings();
+    loadAllSettings();
   }, []);
 
-  // ✅ Load user's saved avatar from backend
-  const loadPrivacySettings = async () => {
+  // Check for changes
+  useEffect(() => {
+    const changed =
+      selectedAvatar !== originalAvatar ||
+      selectedTheme !== originalTheme ||
+      selectedCardBack !== originalCardBack ||
+      statsPublic !== originalStatsPublic;
+
+    setHasChanges(changed);
+  }, [selectedAvatar, selectedTheme, selectedCardBack, statsPublic,
+      originalAvatar, originalTheme, originalCardBack, originalStatsPublic]);
+
+  const loadAllSettings = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/user/privacy`, {
+      // Load from backend
+      const response = await axios.get(`${API_BASE_URL}/api/user/settings`, {
         headers: authService.getAuthHeader()
       });
-      setStatsPublic(response.data.statsPublic);
 
-      // ✅ Load avatar if available
-      if (response.data.avatar) {
-        setSelectedAvatar(response.data.avatar);
-        localStorage.setItem('userAvatar', response.data.avatar);
+      const settings = response.data;
+
+      // Apply avatar
+      if (settings.avatar) {
+        setSelectedAvatar(settings.avatar);
+        setOriginalAvatar(settings.avatar);
+        localStorage.setItem('userAvatar', settings.avatar);
       }
+
+      // Apply theme
+      if (settings.theme) {
+        setSelectedTheme(settings.theme);
+        setOriginalTheme(settings.theme);
+        localStorage.setItem('gameTheme', settings.theme);
+        applyTheme(settings.theme);
+      } else {
+        // Apply saved theme from localStorage
+        applyTheme(selectedTheme);
+      }
+
+      // Apply card back
+      if (settings.cardBack) {
+        setSelectedCardBack(settings.cardBack);
+        setOriginalCardBack(settings.cardBack);
+        localStorage.setItem('cardBack', settings.cardBack);
+      }
+
+      // Apply privacy
+      const isPublic = settings.statsPublic !== null ? settings.statsPublic : true;
+      setStatsPublic(isPublic);
+      setOriginalStatsPublic(isPublic);
+
     } catch (error) {
-      console.error('Error loading privacy settings:', error);
+      console.error('Error loading settings:', error);
+      // Still apply theme from localStorage
+      applyTheme(selectedTheme);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ NEW: Save privacy settings
-  const handlePrivacyToggle = async () => {
+  const saveAllSettings = async () => {
     setSaving(true);
     try {
-      const newValue = !statsPublic;
-      await axios.post(`${API_BASE_URL}/api/user/privacy`,
-        { statsPublic: newValue },
+      await axios.post(`${API_BASE_URL}/api/user/settings`,
+        {
+          avatar: selectedAvatar,
+          theme: selectedTheme,
+          cardBack: selectedCardBack,
+          statsPublic: statsPublic
+        },
         { headers: authService.getAuthHeader() }
       );
-      setStatsPublic(newValue);
-      audioService.playSelect();
+
+      // Update localStorage
+      localStorage.setItem('userAvatar', selectedAvatar);
+      localStorage.setItem('gameTheme', selectedTheme);
+      localStorage.setItem('cardBack', selectedCardBack);
+
+      // Update originals
+      setOriginalAvatar(selectedAvatar);
+      setOriginalTheme(selectedTheme);
+      setOriginalCardBack(selectedCardBack);
+      setOriginalStatsPublic(statsPublic);
+
+      // Apply theme globally
+      applyTheme(selectedTheme);
+
+      setHasChanges(false);
+      audioService.playCorrect();
+      alert('Settings saved successfully! ✅');
+
     } catch (error) {
-      console.error('Error saving privacy settings:', error);
-      alert('Failed to save privacy settings');
+      console.error('Error saving settings:', error);
+      audioService.playWrong();
+      alert('Failed to save settings. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -111,39 +176,33 @@ const Settings = () => {
     setVolumes(audioService.getVolumes());
   };
 
-  const handleAvatarSelect = async (avatar) => {
+  const handleAvatarSelect = (avatar) => {
     setSelectedAvatar(avatar);
-    localStorage.setItem('userAvatar', avatar);
     audioService.playSelect();
-
-    // ✅ Save to backend
-    try {
-      await axios.post(`${API_BASE_URL}/api/user/privacy`,
-        { avatar },
-        { headers: authService.getAuthHeader() }
-      );
-    } catch (error) {
-      console.error('Error saving avatar:', error);
-    }
   };
 
   const applyTheme = (themeId) => {
     const theme = THEME_OPTIONS.find(t => t.id === themeId);
     if (theme) {
       document.documentElement.style.setProperty('--game-gradient', theme.gradient);
+      // Also apply to body for immediate visual feedback
+      document.body.style.background = theme.gradient;
     }
   };
 
   const handleThemeSelect = (themeId) => {
     setSelectedTheme(themeId);
-    localStorage.setItem('gameTheme', themeId);
     applyTheme(themeId);
     audioService.playSelect();
   };
 
   const handleCardBackSelect = (cardBackId) => {
     setSelectedCardBack(cardBackId);
-    localStorage.setItem('cardBack', cardBackId);
+    audioService.playSelect();
+  };
+
+  const handlePrivacyToggle = () => {
+    setStatsPublic(!statsPublic);
     audioService.playSelect();
   };
 
@@ -166,28 +225,46 @@ const Settings = () => {
     }
   };
 
-  // ✅ Don't stop music when navigating to settings
-  useEffect(() => {
-    // Music continues playing from GameBoard
-    return () => {
-      // Don't stop music on unmount
-    };
-  }, []);
+  const handleBack = () => {
+    if (hasChanges) {
+      const confirmLeave = window.confirm('You have unsaved changes. Are you sure you want to leave?');
+      if (!confirmLeave) return;
+    }
+    navigate(-1);
+  };
 
   return (
     <div className="settings-container">
       <div className="settings-header">
         <h1>⚙️ Settings</h1>
-        <button onClick={() => navigate(-1)} className="back-button">
-          ← Back
-        </button>
+        <div className="header-buttons">
+          {hasChanges && (
+            <button
+              onClick={saveAllSettings}
+              className="save-button"
+              disabled={saving}
+            >
+              {saving ? '💾 Saving...' : '💾 Save Changes'}
+            </button>
+          )}
+          <button onClick={handleBack} className="back-button">
+            ← Back
+          </button>
+        </div>
       </div>
+
+      {hasChanges && (
+        <div className="unsaved-changes-banner">
+          ⚠️ You have unsaved changes. Click "Save Changes" to apply them.
+        </div>
+      )}
 
       <div className="settings-content">
 
         {/* Audio Settings */}
         <div className="settings-section">
           <h2>🔊 Audio Settings</h2>
+          <p className="section-note">Audio settings are saved automatically</p>
 
           <div className="setting-item">
             <div className="setting-label">
@@ -252,12 +329,12 @@ const Settings = () => {
             />
           </div>
 
-{/*           <div className="sound-test-buttons"> */}
-{/*             <button onClick={() => testSound('flip')}>🎴 Card Flip</button> */}
-{/*             <button onClick={() => testSound('correct')}>✅ Correct</button> */}
-{/*             <button onClick={() => testSound('wrong')}>❌ Wrong</button> */}
-{/*             <button onClick={() => testSound('victory')}>🎉 Victory</button> */}
-{/*           </div> */}
+          <div className="sound-test-buttons">
+            <button onClick={() => testSound('flip')}>🎴 Card Flip</button>
+            <button onClick={() => testSound('correct')}>✅ Correct</button>
+            <button onClick={() => testSound('wrong')}>❌ Wrong</button>
+            <button onClick={() => testSound('victory')}>🎉 Victory</button>
+          </div>
         </div>
 
         {/* Avatar Selection */}
@@ -313,7 +390,7 @@ const Settings = () => {
           </div>
         </div>
 
-        {/* ✅ NEW: Privacy Settings */}
+        {/* Privacy Settings */}
         <div className="settings-section">
           <h2>🔒 Privacy Settings</h2>
 
@@ -325,7 +402,7 @@ const Settings = () => {
             <button
               className={`toggle-button ${statsPublic ? 'active' : ''}`}
               onClick={handlePrivacyToggle}
-              disabled={saving || loading}
+              disabled={loading}
             >
               <div className="toggle-slider"></div>
               <span>{statsPublic ? 'Public' : 'Private'}</span>

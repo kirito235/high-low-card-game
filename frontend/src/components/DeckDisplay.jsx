@@ -1,5 +1,5 @@
 import React from 'react';
-import { getCardBackImage, getCardImagePath } from '../utils/cardImageHelper';
+import { getCardImagePath } from '../utils/cardImageHelper';
 import '../styles/DeckDisplay.css';
 
 // Helper to get full card name
@@ -22,7 +22,23 @@ const getFullCardName = (cardString) => {
   return `${valueMap[value]} of ${suitMap[suit]}`;
 };
 
+// ✅ Get card back based on user selection
+const getCardBackImage = () => {
+  const selectedCardBack = localStorage.getItem('cardBack') || 'default';
+
+  const cardBackMap = {
+    'default': '/cards/back.png',
+    'blue': '/cards/back-blue.png',
+    'green': '/cards/back-green.png',
+    'gold': '/cards/back-gold.png'
+  };
+
+  return cardBackMap[selectedCardBack] || '/cards/back.png';
+};
+
 const DeckDisplay = ({ lastDrawnCard, isFlipping }) => {
+  const cardBackImage = getCardBackImage();
+
   return (
     <div className="deck-display">
       <h3>Draw Deck</h3>
@@ -30,9 +46,9 @@ const DeckDisplay = ({ lastDrawnCard, isFlipping }) => {
       <div className="deck-area">
         {/* Stack of cards showing deck - ALWAYS VISIBLE */}
         <div className="deck-stack">
-          <img src={getCardBackImage()} alt="Deck" className="deck-card deck-card-3" />
-          <img src={getCardBackImage()} alt="Deck" className="deck-card deck-card-2" />
-          <img src={getCardBackImage()} alt="Deck" className="deck-card deck-card-1" />
+          <img src={cardBackImage} alt="Deck" className="deck-card deck-card-3" />
+          <img src={cardBackImage} alt="Deck" className="deck-card deck-card-2" />
+          <img src={cardBackImage} alt="Deck" className="deck-card deck-card-1" />
         </div>
 
         {/* Last Drawn Card Area - ALWAYS VISIBLE RECTANGLE */}

@@ -14,12 +14,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/stats")
-//@CrossOrigin(origins = "*", maxAge = 3600)
 @CrossOrigin(
         origins = {
                 "http://localhost:3000",
@@ -120,37 +121,58 @@ public class StatsController {
     }
 
     /**
-     * Get stats for a specific user (by username)
+     * ✅ UPDATED: Get stats for a specific user with privacy check
      * GET /api/stats/user/{username}
      */
     @GetMapping("/user/{username}")
     public ResponseEntity<?> getUserStats(@PathVariable String username) {
         try {
-            User user = userRepository.findByUsername(username)
+            User targetUser = userRepository.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            long totalGames = gameHistoryRepository.countByUser(user);
-            long gamesWon = gameHistoryRepository.countByUserAndWonTrue(user);
+            // ✅ Check if requesting user is authenticated
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String currentUsername = null;
+            if (authentication != null && authentication.isAuthenticated()) {
+                try {
+                    UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+                    currentUsername = userDetails.getUsername();
+                } catch (Exception e) {
+                    // Not authenticated or error
+                }
+            }
+
+            // ✅ Check if stats are private and viewer is not the owner
+            boolean isOwnProfile = currentUsername != null && currentUsername.equals(username);
+            boolean statsPublic = targetUser.getStatsPublic() != null ? targetUser.getStatsPublic() : true;
+
+            if (!isOwnProfile && !statsPublic) {
+                // ✅ Return 403 Forbidden for private profiles
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "STATS_PRIVATE");
+                errorResponse.put("message", "This user's stats are private");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+            }
+
+            long totalGames = gameHistoryRepository.countByUser(targetUser);
+            long gamesWon = gameHistoryRepository.countByUserAndWonTrue(targetUser);
             double winRate = totalGames > 0 ? (double) gamesWon / totalGames * 100 : 0.0;
 
-            // ✅ Safe default values
-            Integer bestScore = user.getBestScore() != null ? user.getBestScore() : 0;
-            Integer bestScoreDecks = user.getBestScoreDecks() != null ? user.getBestScoreDecks() : 0;
+            Integer bestScore = targetUser.getBestScore() != null ? targetUser.getBestScore() : 0;
+            Integer bestScoreDecks = targetUser.getBestScoreDecks() != null ? targetUser.getBestScoreDecks() : 0;
 
-            Double averageScore = gameHistoryRepository.findAvgScoreByUser(user);
+            Double averageScore = gameHistoryRepository.findAvgScoreByUser(targetUser);
             averageScore = averageScore != null ? Math.round(averageScore * 10.0) / 10.0 : 0.0;
 
-            // ✅ Safe rank calculation
             Long userRank = userRepository.getUserRankByBestScore(bestScore);
             userRank = (userRank != null) ? userRank + 1 : null;
 
-            // ✅ Safe streak values
-            Integer currentStreak = user.getCurrentWinStreak() != null ? user.getCurrentWinStreak() : 0;
-            Integer longestStreak = user.getLongestWinStreak() != null ? user.getLongestWinStreak() : 0;
+            Integer currentStreak = targetUser.getCurrentWinStreak() != null ? targetUser.getCurrentWinStreak() : 0;
+            Integer longestStreak = targetUser.getLongestWinStreak() != null ? targetUser.getLongestWinStreak() : 0;
 
             UserStatsResponse stats = new UserStatsResponse(
-                    user.getId(),
-                    user.getUsername(),
+                    targetUser.getId(),
+                    targetUser.getUsername(),
                     totalGames,
                     gamesWon,
                     Math.round(winRate * 10.0) / 10.0,
@@ -161,7 +183,21 @@ public class StatsController {
                     longestStreak
             );
 
-            return ResponseEntity.ok(stats);
+            // ✅ Include statsPublic flag in response
+            Map<String, Object> response = new HashMap<>();
+            response.put("userId", stats.getUserId());
+            response.put("username", stats.getUsername());
+            response.put("totalGames", stats.getTotalGames());
+            response.put("gamesWon", stats.getGamesWon());
+            response.put("winRate", stats.getWinRate());
+            response.put("bestScore", stats.getBestScore());
+            response.put("averageScore", stats.getAverageScore());
+            response.put("userRank", stats.getUserRank());
+            response.put("currentWinStreak", stats.getCurrentWinStreak());
+            response.put("longestWinStreak", stats.getLongestWinStreak());
+            response.put("statsPublic", statsPublic);
+
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -23,6 +23,81 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
+    // ✅ Get all user settings
+    @GetMapping("/settings")
+    public ResponseEntity<?> getAllSettings() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).build();
+            }
+
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            User user = userRepository.findByUsername(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("avatar", user.getAvatar() != null ? user.getAvatar() : "🎴");
+            response.put("theme", user.getTheme() != null ? user.getTheme() : "default");
+            response.put("cardBack", user.getCardBack() != null ? user.getCardBack() : "default");
+            response.put("statsPublic", user.getStatsPublic() != null ? user.getStatsPublic() : true);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    // ✅ Save all user settings at once
+    @PostMapping("/settings")
+    public ResponseEntity<?> updateAllSettings(@RequestBody Map<String, Object> request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).build();
+            }
+
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            User user = userRepository.findByUsername(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Update avatar if provided
+            if (request.containsKey("avatar")) {
+                String avatar = (String) request.get("avatar");
+                user.setAvatar(avatar);
+            }
+
+            // Update theme if provided
+            if (request.containsKey("theme")) {
+                String theme = (String) request.get("theme");
+                user.setTheme(theme);
+            }
+
+            // Update card back if provided
+            if (request.containsKey("cardBack")) {
+                String cardBack = (String) request.get("cardBack");
+                user.setCardBack(cardBack);
+            }
+
+            // Update privacy setting if provided
+            if (request.containsKey("statsPublic")) {
+                Boolean statsPublic = (Boolean) request.get("statsPublic");
+                user.setStatsPublic(statsPublic);
+            }
+
+            userRepository.save(user);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Settings updated successfully");
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    // ✅ Keep old endpoint for backwards compatibility
     @GetMapping("/privacy")
     public ResponseEntity<?> getPrivacySettings() {
         try {
@@ -37,7 +112,7 @@ public class UserController {
 
             Map<String, Object> response = new HashMap<>();
             response.put("statsPublic", user.getStatsPublic() != null ? user.getStatsPublic() : true);
-            response.put("avatar", user.getAvatar() != null ? user.getAvatar() : "🎴"); // ✅ ADD THIS
+            response.put("avatar", user.getAvatar() != null ? user.getAvatar() : "🎴");
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -45,6 +120,7 @@ public class UserController {
         }
     }
 
+    // ✅ Keep old endpoint for backwards compatibility
     @PostMapping("/privacy")
     public ResponseEntity<?> updatePrivacySettings(@RequestBody Map<String, Object> request) {
         try {
@@ -57,13 +133,11 @@ public class UserController {
             User user = userRepository.findByUsername(userDetails.getUsername())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // ✅ Update privacy setting
             if (request.containsKey("statsPublic")) {
                 Boolean statsPublic = (Boolean) request.get("statsPublic");
                 user.setStatsPublic(statsPublic);
             }
 
-            // ✅ Update avatar if provided
             if (request.containsKey("avatar")) {
                 String avatar = (String) request.get("avatar");
                 user.setAvatar(avatar);
@@ -80,7 +154,6 @@ public class UserController {
         }
     }
 
-    // ✅ NEW: Get user's public avatar
     @GetMapping("/avatar/{username}")
     public ResponseEntity<?> getUserAvatar(@PathVariable String username) {
         try {

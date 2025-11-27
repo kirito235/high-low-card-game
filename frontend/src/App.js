@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -15,7 +15,27 @@ import Settings from './components/Settings';
 
 import './App.css';
 
+// ✅ Theme configuration
+const THEME_OPTIONS = {
+  'default': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  'ocean': 'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)',
+  'sunset': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+  'forest': 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+  'midnight': 'linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%)'
+};
+
 function App() {
+  // ✅ Apply saved theme on app load
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('gameTheme') || 'default';
+    const themeGradient = THEME_OPTIONS[savedTheme] || THEME_OPTIONS['default'];
+
+    document.documentElement.style.setProperty('--game-gradient', themeGradient);
+    document.body.style.background = themeGradient;
+
+    console.log('✅ Applied theme on load:', savedTheme);
+  }, []);
+
   return (
     <AuthProvider>
       <Router>

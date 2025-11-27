@@ -49,8 +49,9 @@ const GameBoard = () => {
   const [saving, setSaving] = useState(false);
   const [showStatsPopup, setShowStatsPopup] = useState(false);
   const [finalStats, setFinalStats] = useState(null);
-  const [currentGameScore, setCurrentGameScore] = useState(0); // ✅ NEW
+  const [currentGameScore, setCurrentGameScore] = useState(0);
 
+  // ✅ Keep backend awake
   useEffect(() => {
     const keepAwake = setInterval(async () => {
       try {
@@ -64,26 +65,30 @@ const GameBoard = () => {
     return () => clearInterval(keepAwake);
   }, []);
 
+  // ✅ Wake backend on load with better retry logic
   useEffect(() => {
     const wakeBackend = async () => {
       setIsBackendLoading(true);
-      try {
-        await gameService.healthCheck();
-        console.log('🚀 Backend woke up on page load');
-        setIsBackendLoading(false);
-      } catch (error) {
-        console.log('⏳ Backend is waking up...');
-        setTimeout(async () => {
-          try {
-            await gameService.healthCheck();
-            console.log('🚀 Backend woke up after retry');
-            setIsBackendLoading(false);
-          } catch (err) {
-            console.log('⏳ Still waiting for backend...');
-            setIsBackendLoading(false);
+      let attempts = 0;
+      const maxAttempts = 10;
+
+      while (attempts < maxAttempts) {
+        try {
+          await gameService.healthCheck();
+          console.log('🚀 Backend is awake!');
+          setIsBackendLoading(false);
+          return;
+        } catch (error) {
+          attempts++;
+          console.log(`⏳ Backend waking up... (attempt ${attempts}/${maxAttempts})`);
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 3000));
           }
-        }, 2000);
+        }
       }
+
+      console.log('⚠️ Backend may still be waking up, but continuing...');
+      setIsBackendLoading(false);
     };
 
     wakeBackend();
@@ -109,10 +114,12 @@ const GameBoard = () => {
     }
   }, [isStarted, loading, numDecks]);
 
-  // On component mount:
   useEffect(() => {
     audioService.playMusic();
-    return () => audioService.stopMusic();
+    return () => {
+      // Don't stop music when component unmounts
+      // User can control music via Settings
+    };
   }, []);
 
   useEffect(() => {
@@ -218,7 +225,7 @@ const GameBoard = () => {
 
   const startGame = async () => {
     setLoading(true);
-    setMessage('Starting game... (First load may take ~30 seconds if backend was sleeping)');
+    setMessage('Starting game...');
 
     try {
       const state = await gameService.startGame(numDecks);
@@ -229,7 +236,7 @@ const GameBoard = () => {
       setHintsLeft(TOTAL_HINTS);
       setHintsRoundsLeft(0);
       setShowProbabilities(false);
-      setCurrentGameScore(0); // ✅ Reset game score
+      setCurrentGameScore(0);
 
       if (state.deckValues && state.deckValues.length > 0) {
         setSelectedDeck(0);
@@ -238,7 +245,7 @@ const GameBoard = () => {
       await new Promise(resolve => setTimeout(resolve, 250));
       await loadProbabilities();
     } catch (error) {
-      setMessage('Error starting game. Please wait 30 seconds and try again.');
+      setMessage('Error starting game. Please try again.');
     }
     setLoading(false);
   };
@@ -270,7 +277,6 @@ const GameBoard = () => {
     try {
       const deckNumber = selectedDeck + 1;
 
-      // ✅ Get current win streak from user stats
       let winStreak = 0;
       try {
         const userStats = await statsService.getMyStats();
@@ -279,15 +285,28 @@ const GameBoard = () => {
         console.log('Could not fetch win streak, using 0');
       }
 
-      // ✅ Pass win streak to backend
       const response = await gameService.makeGuess(deckNumber, guess, winStreak);
-      const newState = response.gameState || response; // Handle both response formats
+      const newState = response.gameState || response;
 
-      // ✅ Play card flip sound immediately
       audioService.playCardFlip();
 
-      const cardMatch = newState.message.match(/(?:final card was|new card was|card was) ([A-K0-9]+[SHDC])/i);
-      const drawnCard = cardMatch ? cardMatch[1] : null;
+      // ✅ FIX: Extract card from message more reliably
+      let drawnCard = null;
+
+      // Try multiple patterns to extract the card
+      const patterns = [
+        /(?:final card was|new card was|card was|card:)\s*([A-K0-9]+[SHDC])/i,
+        /([A-K0-9]+[SHDC])\s*\|/,
+        /drew\s*([A-K0-9]+[SHDC])/i
+      ];
+
+      for (const pattern of patterns) {
+        const match = newState.message.match(pattern);
+        if (match) {
+          drawnCard = match[1];
+          break;
+        }
+      }
 
       if (drawnCard) {
         setLastDrawnCard(drawnCard);
@@ -299,7 +318,6 @@ const GameBoard = () => {
           const convertedMessage = convertCardNamesInMessage(newState.message);
           setMessage(convertedMessage);
 
-          // ✅ Play correct/wrong sound based on result
           if (convertedMessage.includes('✅') || convertedMessage.includes('Correct')) {
             audioService.playCorrect();
           } else if (convertedMessage.includes('❌') || convertedMessage.includes('Wrong')) {
@@ -320,6 +338,7 @@ const GameBoard = () => {
 
           setIsFlipping(false);
 
+          // ✅ Handle hint countdown
           if (hintsRoundsLeft > 0) {
             const newRounds = hintsRoundsLeft - 1;
             setHintsRoundsLeft(newRounds);
@@ -331,7 +350,6 @@ const GameBoard = () => {
             }
           }
 
-          // ✅ Play victory/gameover sounds
           if (newState.gameOver) {
             if (newState.won) {
               audioService.playVictory();
@@ -356,7 +374,6 @@ const GameBoard = () => {
         const convertedMessage = convertCardNamesInMessage(newState.message);
         setMessage(convertedMessage);
 
-        // ✅ Play sounds for non-card responses
         if (convertedMessage.includes('✅') || convertedMessage.includes('Correct')) {
           audioService.playCorrect();
         } else if (convertedMessage.includes('❌') || convertedMessage.includes('Wrong')) {
@@ -375,7 +392,6 @@ const GameBoard = () => {
           setSelectedDeck(nextDeck);
         }
 
-        // ✅ Play victory/gameover sounds
         if (newState.gameOver) {
           if (newState.won) {
             audioService.playVictory();
@@ -393,7 +409,6 @@ const GameBoard = () => {
         setLoading(false);
       }
 
-      // ✅ Save game results
       if (newState.gameOver) {
         try {
           setSaving(true);
@@ -420,19 +435,7 @@ const GameBoard = () => {
       setMessage('Error making guess!');
       setIsFlipping(false);
       setLoading(false);
-      audioService.playWrong(); // Play error sound
-    }
-  };
-
-  const saveWithRetry = async (score, numDecks, won, retries = 3) => {
-    for (let i = 0; i < retries; i++) {
-      try {
-        await statsService.saveGameResult(score, numDecks, won);
-        return true;
-      } catch (err) {
-        if (i === retries - 1) throw err;
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+      audioService.playWrong();
     }
   };
 
@@ -453,7 +456,7 @@ const GameBoard = () => {
       setShowProbabilities(false);
       setShowStatsPopup(false);
       setFinalStats(null);
-      setCurrentGameScore(0); // ✅ Reset game score
+      setCurrentGameScore(0);
     } catch (error) {
       setMessage('Error resetting game!');
     }
@@ -479,11 +482,9 @@ const GameBoard = () => {
     resetGame();
   };
 
-  // ✅ FIXED: Calculate remaining cards correctly
   const getRemainingCards = () => {
     if (!gameState) return 52;
 
-    // Count cards in remaining deck
     let totalRemaining = 0;
     if (gameState.remainingCards) {
       Object.values(gameState.remainingCards).forEach(suitCards => {
@@ -498,16 +499,17 @@ const GameBoard = () => {
     <div className="game-board">
       <h1 className="game-title">🎴 High-Low Card Game 🎴</h1>
 
+      {/* ✅ Improved loading overlay */}
       {isBackendLoading && (
         <div className="loading-overlay">
           <div className="loading-content">
             <div className="loading-spinner-large">⏳</div>
             <h2>Waking up the server...</h2>
-            <p>This may take up to 30 seconds on first load</p>
+            <p>First load may take 20-30 seconds</p>
             <div className="loading-bar">
               <div className="loading-bar-fill"></div>
             </div>
-            <p className="loading-tip">💡 Tip: The game will load faster on subsequent visits!</p>
+            <p className="loading-tip">💡 Tip: Subsequent loads will be instant!</p>
           </div>
         </div>
       )}
@@ -522,7 +524,6 @@ const GameBoard = () => {
         />
       )}
 
-      {/* ✅ UPDATED: Stats Popup with Current Game Score */}
       {showStatsPopup && finalStats && (
         <div className="stats-popup-overlay">
           <div className="stats-popup">
@@ -572,7 +573,7 @@ const GameBoard = () => {
         />
       )}
 
-      {!gameState?.gameOver && (
+      {!gameState?.gameOver && isStarted && (
         <div className="keyboard-shortcuts-hint">
           <span>💡 Shift+Enter</span>
           <span>← → Navigate</span>
