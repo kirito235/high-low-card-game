@@ -6,6 +6,7 @@ import Confetti from 'react-confetti';
 import '../styles/GameBoard.css';
 import statsService from '../services/statsService';
 import Toast from "./Toast";
+import audioService from '../services/audioService';
 
 const TOTAL_HINTS = 3;
 const ROUNDS_PER_HINT = 3;
@@ -107,6 +108,12 @@ const GameBoard = () => {
       return () => window.removeEventListener('keydown', handleStartScreenKeys);
     }
   }, [isStarted, loading, numDecks]);
+
+  // On component mount:
+  useEffect(() => {
+    audioService.playMusic();
+    return () => audioService.stopMusic();
+  }, []);
 
   useEffect(() => {
     const handleKeyPress = (event) => {
@@ -262,7 +269,22 @@ const GameBoard = () => {
 
     try {
       const deckNumber = selectedDeck + 1;
-      const newState = await gameService.makeGuess(deckNumber, guess);
+
+      // ✅ Get current win streak from user stats
+      let winStreak = 0;
+      try {
+        const userStats = await statsService.getMyStats();
+        winStreak = userStats.currentWinStreak || 0;
+      } catch (err) {
+        console.log('Could not fetch win streak, using 0');
+      }
+
+      // ✅ Pass win streak to backend
+      const response = await gameService.makeGuess(deckNumber, guess, winStreak);
+      const newState = response.gameState || response; // Handle both response formats
+
+      // ✅ Play card flip sound immediately
+      audioService.playCardFlip();
 
       const cardMatch = newState.message.match(/(?:final card was|new card was|card was) ([A-K0-9]+[SHDC])/i);
       const drawnCard = cardMatch ? cardMatch[1] : null;
@@ -273,9 +295,16 @@ const GameBoard = () => {
 
         setTimeout(() => {
           setGameState(newState);
-          setCurrentGameScore(newState.score); // ✅ Update current game score
+          setCurrentGameScore(newState.score);
           const convertedMessage = convertCardNamesInMessage(newState.message);
           setMessage(convertedMessage);
+
+          // ✅ Play correct/wrong sound based on result
+          if (convertedMessage.includes('✅') || convertedMessage.includes('Correct')) {
+            audioService.playCorrect();
+          } else if (convertedMessage.includes('❌') || convertedMessage.includes('Wrong')) {
+            audioService.playWrong();
+          }
 
           if (newState.deckValues[selectedDeck] === 'XX') {
             let nextDeck = selectedDeck;
@@ -302,9 +331,15 @@ const GameBoard = () => {
             }
           }
 
-          if (newState.gameOver && newState.won) {
-            setShowConfetti(true);
-            setTimeout(() => setShowConfetti(false), 7000);
+          // ✅ Play victory/gameover sounds
+          if (newState.gameOver) {
+            if (newState.won) {
+              audioService.playVictory();
+              setShowConfetti(true);
+              setTimeout(() => setShowConfetti(false), 7000);
+            } else {
+              audioService.playGameOver();
+            }
           }
 
           if (!newState.gameOver) {
@@ -317,8 +352,16 @@ const GameBoard = () => {
 
       } else {
         setGameState(newState);
-        setCurrentGameScore(newState.score); // ✅ Update current game score
-        setMessage(convertCardNamesInMessage(newState.message));
+        setCurrentGameScore(newState.score);
+        const convertedMessage = convertCardNamesInMessage(newState.message);
+        setMessage(convertedMessage);
+
+        // ✅ Play sounds for non-card responses
+        if (convertedMessage.includes('✅') || convertedMessage.includes('Correct')) {
+          audioService.playCorrect();
+        } else if (convertedMessage.includes('❌') || convertedMessage.includes('Wrong')) {
+          audioService.playWrong();
+        }
 
         if (newState.deckValues[selectedDeck] === 'XX') {
           let nextDeck = selectedDeck;
@@ -332,9 +375,15 @@ const GameBoard = () => {
           setSelectedDeck(nextDeck);
         }
 
-        if (newState.gameOver && newState.won) {
-          setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 5000);
+        // ✅ Play victory/gameover sounds
+        if (newState.gameOver) {
+          if (newState.won) {
+            audioService.playVictory();
+            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(false), 5000);
+          } else {
+            audioService.playGameOver();
+          }
         }
 
         if (!newState.gameOver) {
@@ -344,6 +393,7 @@ const GameBoard = () => {
         setLoading(false);
       }
 
+      // ✅ Save game results
       if (newState.gameOver) {
         try {
           setSaving(true);
@@ -358,7 +408,10 @@ const GameBoard = () => {
           setShowStatsPopup(true);
 
         } catch (err) {
+          console.error('Error saving game:', err);
           setToastMessage("⚠️ Could not save stats!");
+        } finally {
+          setSaving(false);
         }
       }
 
@@ -367,6 +420,7 @@ const GameBoard = () => {
       setMessage('Error making guess!');
       setIsFlipping(false);
       setLoading(false);
+      audioService.playWrong(); // Play error sound
     }
   };
 
@@ -407,6 +461,7 @@ const GameBoard = () => {
   };
 
   const handleHintClick = () => {
+    audioService.playHint();
     if (hintsLeft > 0 && hintsRoundsLeft === 0) {
       setHintsLeft(hintsLeft - 1);
       setHintsRoundsLeft(ROUNDS_PER_HINT);

@@ -35,6 +35,18 @@ const Leaderboard = () => {
     return `#${rank}`;
   };
 
+  // ✅ NEW: Get user's avatar from localStorage
+  const getUserAvatar = (username) => {
+    // Try to get from localStorage if it's current user
+    const storedAvatar = localStorage.getItem(`avatar_${username}`);
+    return storedAvatar || '🎴'; // Default avatar
+  };
+
+  // ✅ NEW: Handle username click - always navigate but show appropriate message
+  const handleUsernameClick = async (username, statsPublic) => {
+    navigate(`/stats/${username}`);
+  };
+
   if (loading) {
     return (
       <div className="leaderboard-container">
@@ -83,10 +95,15 @@ const Leaderboard = () => {
             {leaderboard.slice(0, 3).map((entry, index) => (
               <div
                 key={entry.rank}
-                className={`podium-card rank-${index + 1} ${entry.isCurrentUser ? 'current-user' : ''}`}
+                className={`podium-card rank-${index + 1} ${entry.isCurrentUser ? 'current-user' : ''} clickable`}
+                onClick={() => handleUsernameClick(entry.username, entry.statsPublic)}
               >
                 <div className="podium-rank">{getRankIcon(entry.rank)}</div>
-                <div className="podium-username">{entry.username}</div>
+                <div className="podium-avatar">{entry.avatar || '🎴'}</div>
+                <div className="podium-username">
+                  {entry.username}
+                  {!entry.statsPublic && <span className="private-badge-small">🔒</span>}
+                </div>
                 <div className="podium-score">{entry.score} pts</div>
                 <div className="podium-streak">🔥 {entry.longestStreak} streak</div>
               </div>
@@ -108,12 +125,15 @@ const Leaderboard = () => {
                 {leaderboard.slice(3).map((entry) => (
                   <tr
                     key={entry.rank}
-                    className={entry.isCurrentUser ? 'current-user-row' : ''}
+                    className={`${entry.isCurrentUser ? 'current-user-row' : ''} clickable-row`}
+                    onClick={() => handleUsernameClick(entry.username, entry.statsPublic)}
                   >
                     <td className="rank-cell">{getRankIcon(entry.rank)}</td>
                     <td className="username-cell">
+                      <span className="avatar-small">{entry.avatar || '🎴'}</span>
                       {entry.username}
                       {entry.isCurrentUser && <span className="you-badge">YOU</span>}
+                      {!entry.statsPublic && <span className="private-badge-small">🔒</span>}
                     </td>
                     <td className="score-cell">{entry.score}</td>
                     <td className="streak-cell">
@@ -128,7 +148,6 @@ const Leaderboard = () => {
       )}
 
       <div className="button-group">
-        {/* ✅ Only show "View My Stats" if authenticated */}
         {isAuthenticated && (
           <button onClick={() => navigate('/stats')} className="nav-button">
             📊 View My Stats

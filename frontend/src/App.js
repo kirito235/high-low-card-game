@@ -10,6 +10,9 @@ import GameBoard from './components/GameBoard';
 import Stats from './components/Stats';
 import Leaderboard from './components/Leaderboard';
 import Navbar from './components/Navbar';
+import PublicStats from './components/PublicStats';
+import Settings from './components/Settings';
+
 import './App.css';
 
 function App() {
@@ -43,6 +46,13 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/stats/:username" element={<PublicStats />} />
+
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } />
 
             {/* Default Route */}
             <Route path="/" element={<Navigate to="/login" />} />

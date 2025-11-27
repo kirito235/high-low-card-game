@@ -47,14 +47,37 @@ public class GameController {
         }
     }
 
+    // ✅ NEW: Process guess with win streak multiplier
     @PostMapping("/guess")
-    public ResponseEntity<GameState> makeGuess(@RequestBody GuessRequest request) {
+    public ResponseEntity<Map<String, Object>> makeGuess(@RequestBody Map<String, Object> request) {
         try {
-            GameState gameState = gameService.processGuess(
-                    request.getDeckNumber(),
-                    request.getGuess()
-            );
-            return ResponseEntity.ok(gameState);
+            int deckNumber = ((Number) request.get("deckNumber")).intValue();
+            String guess = (String) request.get("guess");
+
+            // ✅ Get user's current win streak
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            int winStreak = 0;
+
+            if (authentication != null && authentication.isAuthenticated()) {
+                try {
+                    UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+                    User user = userRepository.findByUsername(userDetails.getUsername()).orElse(null);
+                    if (user != null && user.getCurrentWinStreak() != null) {
+                        winStreak = user.getCurrentWinStreak();
+                    }
+                } catch (Exception e) {
+                    // Guest or error - use 0 streak
+                }
+            }
+
+            GameState gameState = gameService.processGuess(deckNumber, guess, winStreak);
+
+            // ✅ Return game state with streak info
+            Map<String, Object> response = new HashMap<>();
+            response.put("gameState", gameState);
+            response.put("currentWinStreak", winStreak);
+
+            return ResponseEntity.ok(response);
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
@@ -121,12 +144,10 @@ public class GameController {
             User user = userRepository.findByUsername(userDetails.getUsername())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // ✅ FIX: Safe integer extraction
             int score = ((Number) gameResult.get("score")).intValue();
             int numDecks = ((Number) gameResult.get("numDecks")).intValue();
             boolean won = (Boolean) gameResult.get("won");
 
-            // ✅ FIX: Initialize null values
             if (user.getBestScore() == null) user.setBestScore(0);
             if (user.getCurrentWinStreak() == null) user.setCurrentWinStreak(0);
             if (user.getLongestWinStreak() == null) user.setLongestWinStreak(0);
@@ -139,11 +160,9 @@ public class GameController {
             user.setBestScore(currentBest + score);
 
             if (won) {
-                // ✅ Increment BEFORE checking
                 int newStreak = user.getCurrentWinStreak() + 1;
                 user.setCurrentWinStreak(newStreak);
 
-                // ✅ Then check if it's the longest
                 if (newStreak > user.getLongestWinStreak()) {
                     user.setLongestWinStreak(newStreak);
                 }
@@ -153,8 +172,9 @@ public class GameController {
 
             userRepository.save(user);
 
-            Map<String, String> response = new HashMap<>();
+            Map<String, Object> response = new HashMap<>();
             response.put("message", "Game saved successfully");
+            response.put("newWinStreak", user.getCurrentWinStreak());
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {

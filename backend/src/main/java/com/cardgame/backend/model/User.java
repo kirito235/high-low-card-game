@@ -55,6 +55,32 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<GameHistory> gameHistories = new HashSet<>();
 
+    @Column(name = "stats_public")
+    private Boolean statsPublic = true; // Default to public
+
+
+    @Column(name = "avatar")
+    private String avatar = "🎴"; // Default avatar
+
+
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+
+    // Add getter and setter:
+    public Boolean getStatsPublic() {
+        return statsPublic;
+    }
+
+    public void setStatsPublic(Boolean statsPublic) {
+        this.statsPublic = statsPublic;
+    }
+
     // Constructors
     public User() {
         this.createdAt = LocalDateTime.now();

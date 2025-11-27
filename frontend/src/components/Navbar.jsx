@@ -37,6 +37,9 @@ const Navbar = () => {
                   {user?.username}
                   {isGuest && <span className="guest-badge">Guest</span>}
                 </span>
+                <Link to="/settings" className="navbar-link">
+                  ⚙️ Settings
+                </Link>
                 <button onClick={handleLogout} className="logout-button">
                   Logout
                 </button>

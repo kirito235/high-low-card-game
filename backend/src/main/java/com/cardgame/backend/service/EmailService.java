@@ -76,114 +76,57 @@ public class EmailService {
     }
 
     private String buildPasswordResetHtml(String resetLink) {
+
+
         return String.format("""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <style>
-                    body { 
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-                        line-height: 1.6; 
-                        color: #333;
-                        margin: 0;
-                        padding: 0;
-                        background-color: #f4f4f4;
-                    }
-                    .container { 
-                        max-width: 600px; 
-                        margin: 40px auto; 
-                        background: white;
-                        border-radius: 12px;
-                        overflow: hidden;
-                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                    }
-                    .header {
-                        background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
-                        padding: 30px;
-                        text-align: center;
-                    }
-                    .header h1 {
-                        color: white;
-                        margin: 0;
-                        font-size: 28px;
-                    }
-                    .content {
-                        padding: 40px 30px;
-                    }
-                    .button { 
-                        display: inline-block; 
-                        padding: 14px 32px; 
-                        background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
-                        color: white !important; 
-                        text-decoration: none; 
-                        border-radius: 8px;
-                        margin: 20px 0;
-                        font-weight: 600;
-                    }
-                    .link-box {
-                        background: #f8f9fa;
-                        padding: 15px;
-                        border-radius: 6px;
-                        word-break: break-all;
-                        color: #667eea;
-                        font-size: 14px;
-                        margin: 15px 0;
-                    }
-                    .footer { 
-                        background: #f8f9fa;
-                        padding: 20px 30px;
-                        text-align: center;
-                        font-size: 13px; 
-                        color: #666;
-                        border-top: 1px solid #e0e0e0;
-                    }
-                    .warning {
-                        background: #fff3cd;
-                        border-left: 4px solid #ffc107;
-                        padding: 12px;
-                        margin: 20px 0;
-                        border-radius: 4px;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>🎴 Password Reset</h1>
-                    </div>
-                    <div class="content">
-                        <h2 style="color: #2c3e50; margin-top: 0;">Reset Your Password</h2>
-                        <p>Hi there!</p>
-                        <p>We received a request to reset your password for your <strong>Card Game</strong> account.</p>
-                        <p>Click the button below to create a new password:</p>
-                        
-                        <div style="text-align: center; margin: 30px 0;">
-                            <a href="%s" class="button">Reset My Password</a>
-                        </div>
-                        
-                        <p style="font-size: 14px; color: #666;">Or copy and paste this link into your browser:</p>
-                        <div class="link-box">%s</div>
-                        
-                        <div class="warning">
-                            <strong>⏰ Important:</strong> This link will expire in 24 hours for security reasons.
-                        </div>
-                        
-                        <p style="margin-top: 30px; font-size: 14px; color: #666;">
-                            If you didn't request this password reset, you can safely ignore this email. 
-                            Your password will remain unchanged.
-                        </p>
-                    </div>
-                    <div class="footer">
-                        <p style="margin: 5px 0;"><strong>The Card Game Team</strong></p>
-                        <p style="margin: 5px 0; color: #999;">
-                            This is an automated email. Please do not reply.
-                        </p>
-                    </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f4f4f4;">
+            <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px;">
+                
+                <h1 style="color: #667eea; margin-bottom: 20px;">Password Reset Request</h1>
+                
+                <p>Hello,</p>
+                
+                <p>You recently requested to reset your password for your Card Game account. Use the button below to reset it.</p>
+                
+                <p style="margin: 30px 0;">
+                    <a href="%s" style="display: inline-block; padding: 12px 24px; background-color: #667eea; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">Reset Your Password</a>
+                </p>
+                
+                <p style="font-size: 14px; color: #666; margin-top: 30px;">
+                    If the button doesn't work, copy and paste this link into your browser:
+                </p>
+                
+                <p style="font-size: 13px; color: #667eea; word-break: break-all; background: #f8f9fa; padding: 10px; border-radius: 4px;">
+                    %s
+                </p>
+                
+                <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 13px; color: #666;">
+                    <strong>Security Note:</strong> This password reset link will expire in 24 hours for your security. If you did not request this reset, please ignore this email and your password will remain unchanged.
+                </p>
+                
+                <p style="font-size: 13px; color: #666; margin-top: 20px;">
+                    If you have any questions, feel free to contact us.
+                </p>
+                
+                <p style="font-size: 13px; color: #666; margin-top: 20px;">
+                    Best regards,<br>
+                    The Card Game Team
+                </p>
+                
+                <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 11px; color: #999; text-align: center;">
+                    <p>This is an automated message from Card Game. Please do not reply to this email.</p>
+                   
                 </div>
-            </body>
-            </html>
-            """, resetLink, resetLink);
+                
+            </div>
+        </body>
+        </html>
+        """, resetLink, resetLink);
     }
 }

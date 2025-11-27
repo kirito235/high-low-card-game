@@ -8,7 +8,7 @@ import org.springframework.web.context.annotation.SessionScope;
 import java.util.*;
 
 @Service
-@SessionScope // ✅ CRITICAL: Each user gets their own instance
+@SessionScope
 public class GameService {
 
     private static final int TOTAL_CARDS = 52;
@@ -19,10 +19,9 @@ public class GameService {
     }
 
     /**
-     * Calculate score multiplier based on number of decks
-     * Fewer decks = Higher difficulty = Higher multiplier
+     * ✅ UPDATED: Calculate score multiplier based on number of decks
      */
-    private double getScoreMultiplier(int numDecks) {
+    private double getDeckMultiplier(int numDecks) {
         switch (numDecks) {
             case 6: return 2.0;  // Hardest
             case 7: return 1.8;
@@ -34,8 +33,23 @@ public class GameService {
     }
 
     /**
-     * Initialize a new game with specified number of decks
+     * ✅ NEW: Calculate streak multiplier based on user's win streak
      */
+    private double getStreakMultiplier(int winStreak) {
+        if (winStreak < 2) return 1.0;
+        // Starts at 1.1x for 2-game streak, increases by 0.05x per additional win
+        return 1.0 + (0.05 * winStreak);
+    }
+
+    /**
+     * ✅ NEW: Calculate bonus points for winning
+     */
+    private int getVictoryBonus(int numDecks, int winStreak) {
+        int deckBonus = (11 - numDecks) * 50; // More bonus for harder difficulties
+        int streakBonus = winStreak * 25; // 25 points per win in streak
+        return deckBonus + streakBonus;
+    }
+
     public GameState startNewGame(int numDecks) {
         if (numDecks < 6 || numDecks > 10) {
             throw new IllegalArgumentException("Number of decks must be between 6 and 10");
@@ -44,11 +58,9 @@ public class GameService {
         currentGame = new GameState();
         currentGame.setNumDecks(numDecks);
 
-        // Initialize the card deck
         HashMap<String, ArrayList<String>> cards = initializeCards();
         currentGame.setRemainingCards(cards);
 
-        // Initialize deck values (top card for each deck)
         List<String> deckValues = new ArrayList<>();
         for (int i = 0; i < numDecks; i++) {
             deckValues.add(drawRandomCard(cards));
@@ -60,9 +72,6 @@ public class GameService {
         return currentGame;
     }
 
-    /**
-     * Initialize all 52 cards
-     */
     private HashMap<String, ArrayList<String>> initializeCards() {
         HashMap<String, ArrayList<String>> cards = new HashMap<>();
         String[] suits = {"S", "C", "H", "D"};
@@ -79,9 +88,6 @@ public class GameService {
         return cards;
     }
 
-    /**
-     * Draw a random card from remaining cards
-     */
     private String drawRandomCard(HashMap<String, ArrayList<String>> cards) {
         Random rand = new Random();
         ArrayList<String> suitList = new ArrayList<>(cards.keySet());
@@ -94,7 +100,6 @@ public class GameService {
         ArrayList<String> suitCards = cards.get(randomSuit);
         String pickedCard = suitCards.remove(rand.nextInt(suitCards.size()));
 
-        // Remove suit if empty
         if (suitCards.isEmpty()) {
             cards.remove(randomSuit);
         }
@@ -103,9 +108,9 @@ public class GameService {
     }
 
     /**
-     * Process a player's guess
+     * ✅ UPDATED: Process guess with win streak multiplier
      */
-    public GameState processGuess(int deckNumber, String guess) {
+    public GameState processGuess(int deckNumber, String guess, int userWinStreak) {
         if (currentGame == null) {
             throw new IllegalStateException("No game in progress. Start a new game first.");
         }
@@ -114,88 +119,99 @@ public class GameService {
             return currentGame;
         }
 
-        // Validate deck number
         if (deckNumber < 1 || deckNumber > currentGame.getNumDecks()) {
             currentGame.setMessage("Invalid deck number");
             return currentGame;
         }
 
-        // Check if deck is already used
         String topCard = currentGame.getDeckValues().get(deckNumber - 1);
         if (topCard.equalsIgnoreCase("XX")) {
             currentGame.setMessage("Deck " + deckNumber + " is already eliminated. Choose another deck.");
             return currentGame;
         }
 
-        // Draw new card
         String newCard = drawRandomCard(currentGame.getRemainingCards());
 
-        // Calculate base score
+        // Calculate remaining cards
         int remainingCardsCount = getDeckSize(currentGame.getRemainingCards());
+
+        // ✅ Calculate score with win streak multiplier
         int baseScore = TOTAL_CARDS - remainingCardsCount;
+        double deckMultiplier = getDeckMultiplier(currentGame.getNumDecks());
+        double streakMultiplier = getStreakMultiplier(userWinStreak);
 
-        // Apply multiplier
-        double multiplier = getScoreMultiplier(currentGame.getNumDecks());
-        int finalScore = (int) Math.round(baseScore * multiplier);
-
-        // Check if guess is correct
         boolean correct = checkGuess(topCard, newCard, guess);
 
-        // Check if all 52 cards have been drawn (player wins)
+        int finalScore = (int) Math.round(baseScore * deckMultiplier * streakMultiplier);
+
+        // Check win condition
         if (baseScore >= TOTAL_CARDS || remainingCardsCount == 0) {
+            int victoryBonus = getVictoryBonus(currentGame.getNumDecks(), userWinStreak);
+            finalScore += victoryBonus;
+
             currentGame.setScore(finalScore);
             currentGame.setGameOver(true);
             currentGame.setWon(true);
 
             if (correct) {
                 currentGame.getDeckValues().set(deckNumber - 1, newCard);
-                currentGame.setMessage("🎉 Congratulations! You won! The final card was " + newCard +
-                        ". Final score: " + finalScore + " (Multiplier: " + multiplier + "x) 🎉");
+                currentGame.setMessage(String.format(
+                        "🎉 Victory! Final card: %s | Score: %d | Win Streak: %d (%.2fx multiplier) | Victory Bonus: +%d 🎉",
+                        newCard, finalScore, userWinStreak, streakMultiplier, victoryBonus
+                ));
             } else {
                 currentGame.getDeckValues().set(deckNumber - 1, "XX");
-                currentGame.setMessage("🎉 Congratulations! You won! The final card was " + newCard +
-                        ". Final score: " + finalScore + " (Multiplier: " + multiplier + "x) 🎉");
+                currentGame.setMessage(String.format(
+                        "🎉 Victory! Final card: %s | Score: %d 🎉",
+                        newCard, finalScore
+                ));
             }
 
             return currentGame;
         }
 
-        // Check if deck is empty
         if (newCard == null) {
+            int victoryBonus = getVictoryBonus(currentGame.getNumDecks(), userWinStreak);
+            finalScore += victoryBonus;
             currentGame.setScore(finalScore);
             currentGame.setGameOver(true);
             currentGame.setWon(true);
-            currentGame.setMessage("🎉 Congratulations! You won! All cards have been guessed! Final score: " + finalScore);
+            currentGame.setMessage(String.format(
+                    "🎉 Victory! All cards guessed! Score: %d | Bonus: +%d 🎉",
+                    finalScore, victoryBonus
+            ));
             return currentGame;
         }
 
-        // Update score
         currentGame.setScore(finalScore);
 
         if (correct) {
             currentGame.getDeckValues().set(deckNumber - 1, newCard);
-            currentGame.setMessage("Correct! The new card was " + newCard + ". Your score: " + finalScore);
+            currentGame.setMessage(String.format(
+                    "✅ Correct! New card: %s | Score: %d | Win Streak: %d (%.2fx multiplier)",
+                    newCard, finalScore, userWinStreak, streakMultiplier
+            ));
         } else {
             currentGame.getDeckValues().set(deckNumber - 1, "XX");
-            currentGame.setMessage("Wrong! The card was " + newCard + ". Deck " + deckNumber + " eliminated. Your score: " + finalScore);
+            currentGame.setMessage(String.format(
+                    "❌ Wrong! Card: %s | Deck %d eliminated | Score: %d",
+                    newCard, deckNumber, finalScore
+            ));
         }
 
-        // Check if all decks are eliminated
+        // Check if all decks eliminated
         boolean allEliminated = currentGame.getDeckValues().stream()
                 .allMatch(val -> val.equalsIgnoreCase("XX"));
 
         if (allEliminated) {
             currentGame.setGameOver(true);
             currentGame.setWon(false);
-            currentGame.setMessage(currentGame.getMessage() + " Game Over! All decks eliminated. Final score: " + finalScore);
+            currentGame.setMessage(currentGame.getMessage() + " | Game Over! All decks eliminated. Final score: " + finalScore);
         }
 
         return currentGame;
     }
 
-    /**
-     * Check if the guess is correct
-     */
     private boolean checkGuess(String topCard, String newCard, String guess) {
         int topValue = getCardValue(topCard);
         int newValue = getCardValue(newCard);
@@ -213,9 +229,6 @@ public class GameService {
         return false;
     }
 
-    /**
-     * Get numeric value of a card
-     */
     private int getCardValue(String card) {
         if (card.equalsIgnoreCase("XX")) {
             return 0;
@@ -237,9 +250,6 @@ public class GameService {
         }
     }
 
-    /**
-     * Get total remaining cards
-     */
     private int getDeckSize(HashMap<String, ArrayList<String>> cards) {
         int size = 0;
         for (ArrayList<String> list : cards.values()) {
@@ -248,9 +258,6 @@ public class GameService {
         return size;
     }
 
-    /**
-     * Calculate probability for a specific deck
-     */
     public ProbabilityInfo calculateProbability(int deckIndex) {
         if (currentGame == null) {
             return new ProbabilityInfo(0, 0, 0, 0);
@@ -286,16 +293,10 @@ public class GameService {
         return new ProbabilityInfo(higherCount, lowerCount, equalCount, total);
     }
 
-    /**
-     * Get current game state
-     */
     public GameState getCurrentGame() {
         return currentGame;
     }
 
-    /**
-     * Reset game
-     */
     public void resetGame() {
         this.currentGame = null;
     }

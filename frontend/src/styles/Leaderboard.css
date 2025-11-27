@@ -331,3 +331,26 @@
     padding: 4px 10px;
   }
 }
+.clickable,
+.clickable-row {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.clickable:hover,
+.clickable-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.private-badge {
+  font-size: 14px;
+  margin-left: 5px;
+  opacity: 0.6;
+}
+
+.private-badge-small {
+  font-size: 12px;
+  margin-left: 5px;
+  opacity: 0.6;
+}

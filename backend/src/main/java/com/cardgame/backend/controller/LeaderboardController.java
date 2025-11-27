@@ -54,13 +54,15 @@ public class LeaderboardController {
                 boolean isCurrentUser = currentUsername != null
                         && user.getUsername().equals(currentUsername);
 
-                // ✅ UPDATED: Include score and longest streak instead of decks and date
+
                 LeaderboardEntry entry = new LeaderboardEntry(
                         rank,
                         user.getUsername(),
                         user.getBestScore(),
                         user.getLongestWinStreak() != null ? user.getLongestWinStreak() : 0,
-                        isCurrentUser
+                        isCurrentUser,
+                        user.getStatsPublic() != null ? user.getStatsPublic() : true,
+                        user.getAvatar() != null ? user.getAvatar() : "🎴" // ✅ ADD THIS
                 );
 
                 leaderboard.add(entry);

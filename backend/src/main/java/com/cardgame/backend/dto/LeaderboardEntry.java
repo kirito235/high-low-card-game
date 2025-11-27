@@ -1,23 +1,26 @@
 package com.cardgame.backend.dto;
 
-import java.time.LocalDateTime;
-
 public class LeaderboardEntry {
 
     private Long rank;
     private String username;
-    private int score; // Total accumulated score
-    private int longestStreak; // ✅ NEW: Highest win streak
+    private int score;
+    private int longestStreak;
     private boolean isCurrentUser;
+    private boolean statsPublic;
+    private String avatar; // ✅ NEW
 
     public LeaderboardEntry() {}
 
-    public LeaderboardEntry(Long rank, String username, int score, int longestStreak, boolean isCurrentUser) {
+    public LeaderboardEntry(Long rank, String username, int score, int longestStreak,
+                            boolean isCurrentUser, boolean statsPublic, String avatar) {
         this.rank = rank;
         this.username = username;
         this.score = score;
         this.longestStreak = longestStreak;
         this.isCurrentUser = isCurrentUser;
+        this.statsPublic = statsPublic;
+        this.avatar = avatar;
     }
 
     // Getters and Setters
@@ -59,5 +62,21 @@ public class LeaderboardEntry {
 
     public void setCurrentUser(boolean currentUser) {
         isCurrentUser = currentUser;
+    }
+
+    public boolean isStatsPublic() {
+        return statsPublic;
+    }
+
+    public void setStatsPublic(boolean statsPublic) {
+        this.statsPublic = statsPublic;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 }

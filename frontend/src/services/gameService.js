@@ -27,12 +27,16 @@ const gameService = {
     }
   },
 
-  // Make a guess
-  makeGuess: async (deckNumber, guess) => {
+  // ✅ UPDATED: Make a guess with win streak
+  makeGuess: async (deckNumber, guess, winStreak = 0) => {
     try {
       const response = await axios.post(
         `${API_BASE_URL}/guess`,
-        { deckNumber, guess },
+        {
+          deckNumber,
+          guess,
+          winStreak // ✅ Send win streak to backend
+        },
         { headers: authService.getAuthHeader() }
       );
       return response.data;
